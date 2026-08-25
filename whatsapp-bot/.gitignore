@@ -1,0 +1,14 @@
+# Build
+dist/
+
+# Environment
+.env
+
+# WhatsApp session data (CRITICAL — never commit)
+auth_info/
+
+# Dependencies
+node_modules/
+
+# Logs
+*.log
