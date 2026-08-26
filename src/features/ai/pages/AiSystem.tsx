@@ -78,8 +78,8 @@ export default function AiSystem({ userRole, userId }: AiSystemPageProps) {
         .from('expediente')
         .select('id_expediente')
         .eq('id_paciente', selectedPatient)
-        .maybeSingle()
-        .abortSignal(controller.signal);
+        .abortSignal(controller.signal)
+        .maybeSingle();
 
       if (error) {
         setPatientError('Error al cargar expediente');

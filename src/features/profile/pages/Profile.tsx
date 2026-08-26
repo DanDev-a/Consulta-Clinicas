@@ -25,28 +25,6 @@ const ROLE_VARIANTS: Record<UserRole, 'danger' | 'info' | 'success' | 'warning' 
   PACIENTE: 'neutral',
 };
 
-interface UsuarioData {
-  nombre: string;
-  apellido: string;
-  email: string;
-}
-
-interface PacienteData {
-  telefono: string;
-  direccion: string;
-  ciudad: string;
-  grupo_sanguineo: string;
-  sexo: string;
-  fecha_nacimiento: string;
-}
-
-interface DoctorData {
-  telefono: string;
-  id_especialidad: number;
-  numero_licencia: string;
-  especialidad_nombre?: string;
-}
-
 export default function Profile() {
   const { user } = useAuthContext();
   const [nombre, setNombre] = useState('');
@@ -107,7 +85,7 @@ export default function Profile() {
         if (doctor) {
           setTelefono(doctor.telefono ?? '');
           setLicencia(doctor.numero_licencia ?? '');
-          const esp = doctor.especialidad as { nombre: string } | null;
+          const esp = doctor.especialidad as Record<string, any> | null;
           setEspecialidad(esp?.nombre ?? '');
         }
       }

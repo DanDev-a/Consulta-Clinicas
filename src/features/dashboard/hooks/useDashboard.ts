@@ -171,9 +171,9 @@ export function useDashboard(userId: string | undefined, userRole: string | unde
         .select('doctor:doctor(id_doctor, especialidad:especialidad(nombre))');
 
       const espMap: Record<string, number> = {};
-      for (const c of citaEsp ?? []) {
-        const doc = c.doctor as Record<string, unknown> | null;
-        const esp = doc?.especialidad as Record<string, unknown> | null;
+      for (const c of (citaEsp ?? []) as Record<string, any>[]) {
+        const doc = c.doctor as Record<string, any> | null;
+        const esp = doc?.especialidad as Record<string, any> | null;
         const espNombre = (esp?.nombre as string) ?? 'Sin especialidad';
         espMap[espNombre] = (espMap[espNombre] ?? 0) + 1;
       }
@@ -186,8 +186,8 @@ export function useDashboard(userId: string | undefined, userRole: string | unde
         .limit(5);
 
       setRecentPatients(
-        (pacRec ?? []).map((p: Record<string, unknown>) => {
-          const usuario = p.usuario as Record<string, string> | null;
+        ((pacRec ?? []) as Record<string, any>[]).map((p) => {
+          const usuario = p.usuario as Record<string, any> | null;
           return {
             idPaciente: p.id_paciente as string,
             nombre: usuario?.nombre ?? '',
@@ -215,12 +215,12 @@ export function useDashboard(userId: string | undefined, userRole: string | unde
       const { data: citasProx } = await citasQuery;
 
       setUpcomingAppointments(
-        (citasProx ?? []).map((c: Record<string, unknown>) => {
-          const paciente = c.paciente as Record<string, unknown> | null;
-          const pacUsuario = paciente?.usuario as Record<string, string> | null;
-          const doctor = c.doctor as Record<string, unknown> | null;
-          const docUsuario = doctor?.usuario as Record<string, string> | null;
-          const especialidad = doctor?.especialidad as Record<string, string> | null;
+        ((citasProx ?? []) as Record<string, any>[]).map((c) => {
+          const paciente = c.paciente as Record<string, any> | null;
+          const pacUsuario = paciente?.usuario as Record<string, any> | null;
+          const doctor = c.doctor as Record<string, any> | null;
+          const docUsuario = doctor?.usuario as Record<string, any> | null;
+          const especialidad = doctor?.especialidad as Record<string, any> | null;
           return {
             idCita: c.id_cita as number,
             fechaHora: c.fecha_hora as string,
@@ -296,10 +296,10 @@ export function useDashboard(userId: string | undefined, userRole: string | unde
           );
 
         const docMap: Record<string, { nombre: string; apellido: string; especialidad: string; total: number; atendidas: number }> = {};
-        for (const c of doctorCitas ?? []) {
-          const doc = c.doctor as Record<string, unknown> | null;
-          const docUsuario = doc?.usuario as Record<string, string> | null;
-          const esp = doc?.especialidad as Record<string, string> | null;
+        for (const c of (doctorCitas ?? []) as Record<string, any>[]) {
+          const doc = c.doctor as Record<string, any> | null;
+          const docUsuario = doc?.usuario as Record<string, any> | null;
+          const esp = doc?.especialidad as Record<string, any> | null;
           const id = c.id_doctor as string;
           if (!docMap[id]) {
             docMap[id] = {
@@ -365,8 +365,8 @@ export function useDashboard(userId: string | undefined, userRole: string | unde
           .select('cie10:diagnosticos_cie10(clave, descripcion)');
 
         const cie10Map: Record<string, { descripcion: string; total: number }> = {};
-        for (const d of diagData ?? []) {
-          const cie = d.cie10 as Record<string, string> | null;
+        for (const d of (diagData ?? []) as Record<string, any>[]) {
+          const cie = d.cie10 as Record<string, any> | null;
           if (!cie?.clave) continue;
           if (!cie10Map[cie.clave]) {
             cie10Map[cie.clave] = { descripcion: cie.descripcion ?? '', total: 0 };

@@ -1,6 +1,5 @@
-import { useState, createContext, useContext, type ReactNode } from 'react';
+import { useState, createContext, type ReactNode } from 'react';
 import { RiArrowUpSLine, RiArrowDownSLine, RiCheckboxBlankLine, RiCheckboxLine, RiCheckboxIndeterminateLine } from 'react-icons/ri';
-import Spinner from './Spinner';
 import EmptyState from './EmptyState';
 
 /* ─── Context ─── */
@@ -21,12 +20,6 @@ interface DataTableContextValue<T = any> {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const DataTableContext = createContext<DataTableContextValue<any> | null>(null);
 
-function useTableContext() {
-  const ctx = useContext(DataTableContext);
-  if (!ctx) throw new Error('DataTable compound components must be used within <DataTable>');
-  return ctx;
-}
-
 /* ─── Root ─── */
 interface DataTableProps<T> {
   data: T[];
@@ -43,7 +36,7 @@ interface DataTableProps<T> {
   className?: string;
 }
 
-function DataTableRoot<T extends Record<string, unknown>>({
+function DataTableRoot<T>({
   data,
   keyField = 'id',
   loading = false,
@@ -90,7 +83,7 @@ function DataTableRoot<T extends Record<string, unknown>>({
       setInternalSelected(new Set());
       onSelectionChange?.([]);
     } else {
-      const all = new Set(data.map((row) => String(row[keyField])));
+      const all = new Set(data.map((row) => String((row as Record<string, unknown>)[keyField])));
       setInternalSelected(all);
       onSelectionChange?.(Array.from(all));
     }
@@ -99,8 +92,8 @@ function DataTableRoot<T extends Record<string, unknown>>({
   // Sort data
   const sortedData = sortKey
     ? [...data].sort((a, b) => {
-        const aVal = a[sortKey];
-        const bVal = b[sortKey];
+        const aVal = (a as Record<string, unknown>)[sortKey];
+        const bVal = (b as Record<string, unknown>)[sortKey];
         if (aVal == null && bVal == null) return 0;
         if (aVal == null) return 1;
         if (bVal == null) return -1;
@@ -115,9 +108,10 @@ function DataTableRoot<T extends Record<string, unknown>>({
     : data;
 
   // Extract columns from children
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const columns = (Array.isArray(children) ? children : [children]).filter(
     (child) => child && typeof child === 'object' && 'props' in child
-  ) as React.ReactElement<{ sortKey?: string; header?: string; align?: string; children: (row: T) => ReactNode }>[];
+  ) as React.ReactElement<{ sortKey?: string; header?: string; align?: string; children: (row: any) => ReactNode }>[];
 
   const allSelected = data.length > 0 && selectedRows.size === data.length;
   const someSelected = selectedRows.size > 0 && selectedRows.size < data.length;
@@ -226,7 +220,7 @@ function DataTableRoot<T extends Record<string, unknown>>({
             </thead>
             <tbody>
               {sortedData.map((row, ri) => {
-                const rowId = String(row[keyField]);
+                const rowId = String((row as Record<string, unknown>)[keyField]);
                 const isSelected = selectedRows.has(rowId);
                 return (
                   <tr
@@ -286,9 +280,8 @@ interface ColumnProps<T> {
   children: (row: T) => ReactNode;
 }
 
-// Column is a placeholder — actual rendering is done in DataTableRoot
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function Column<T>(_props: ColumnProps<T>) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function Column<T = any>(_props: ColumnProps<T>) {
   return null;
 }
 

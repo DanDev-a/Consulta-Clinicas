@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../../config/supabaseClient';
-import { useAuthContext } from '../../../contexts/AuthContext';
 
 export interface PendingInvite {
   token: string;
@@ -20,7 +19,6 @@ export interface UsuarioRow {
 }
 
 export function useUserManagement() {
-  const { user } = useAuthContext();
   const [usuarios, setUsuarios] = useState<UsuarioRow[]>([]);
   const [invites, setInvites] = useState<PendingInvite[]>([]);
   const [loading, setLoading] = useState(true);

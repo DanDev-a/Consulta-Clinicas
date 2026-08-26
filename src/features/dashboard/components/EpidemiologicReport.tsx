@@ -14,7 +14,7 @@ export default function EpidemiologicReport({ data }: Props) {
 
   return (
     <div className="space-y-3">
-      {data.map((row, i) => {
+      {data.map((row) => {
         const width = maxTotal > 0 ? (row.totalDiagnosticos / maxTotal) * 100 : 0;
         return (
           <div key={row.claveCie10} className="space-y-1">

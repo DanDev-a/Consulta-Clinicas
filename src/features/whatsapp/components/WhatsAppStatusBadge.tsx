@@ -4,7 +4,7 @@ interface WhatsAppStatusBadgeProps {
   estado: string;
 }
 
-const STATUS_MAP: Record<string, { variant: 'success' | 'danger' | 'warning' | 'info' | 'default'; label: string }> = {
+const STATUS_MAP: Record<string, { variant: 'success' | 'danger' | 'warning' | 'info' | 'neutral'; label: string }> = {
   ENVIADO: { variant: 'success', label: 'Enviado' },
   ENTREGADO: { variant: 'success', label: 'Entregado' },
   PENDIENTE: { variant: 'warning', label: 'Pendiente' },
@@ -19,6 +19,6 @@ const STATUS_MAP: Record<string, { variant: 'success' | 'danger' | 'warning' | '
 };
 
 export default function WhatsAppStatusBadge({ estado }: WhatsAppStatusBadgeProps) {
-  const config = STATUS_MAP[estado] ?? { variant: 'default' as const, label: estado };
+  const config = STATUS_MAP[estado] ?? { variant: 'neutral' as const, label: estado };
   return <Badge variant={config.variant}>{config.label}</Badge>;
 }

@@ -12,7 +12,7 @@ export default function AiActivitySummary({ data }: Props) {
   }
 
   const items = [
-    { label: 'Total diagnosticos', value: data.totalDiagnostico, color: 'accent' as const },
+    { label: 'Total diagnosticos', value: data.totalDiagnostico, color: 'info' as const },
     { label: 'Pendientes', value: data.pendientes, color: 'warning' as const },
     { label: 'Aceptados', value: data.aceptados, color: 'success' as const },
     { label: 'Rechazados', value: data.rechazados, color: 'danger' as const },

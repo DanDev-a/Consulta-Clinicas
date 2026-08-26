@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { RiUser3Line, RiLogoutBoxLine, RiSettingsLine, RiUserLine } from 'react-icons/ri';
+import { RiLogoutBoxLine, RiSettingsLine, RiUserLine } from 'react-icons/ri';
 import Dropdown from '../ui/Dropdown';
 import Avatar from '../ui/Avatar';
 import Badge from '../ui/Badge';

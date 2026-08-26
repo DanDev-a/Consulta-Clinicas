@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { RiDownloadLine } from 'react-icons/ri';
 
 interface ExportButtonProps {
-  data: Record<string, unknown>[];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any[];
   filename: string;
   label?: string;
 }

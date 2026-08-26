@@ -15,7 +15,6 @@ function BreadcrumbRoot({ separator = <RiArrowRightSLine size={14} />, children,
     <nav aria-label="Breadcrumb" className={className}>
       <ol className="flex items-center flex-wrap gap-1">
         {items.map((item, i) => {
-          const isLast = i === items.length - 1;
           return (
             <li key={i} className="flex items-center gap-1">
               {i > 0 && (

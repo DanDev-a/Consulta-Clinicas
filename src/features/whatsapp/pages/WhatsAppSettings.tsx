@@ -6,12 +6,11 @@ import type { WhatsAppConfig, WhatsAppConfigFormData } from '../types/whatsapp';
 interface WhatsAppSettingsProps {
   config: WhatsAppConfig | null;
   botStatus: string;
-  loading: boolean;
   error: string | null;
   onSave: (data: WhatsAppConfigFormData) => Promise<boolean>;
 }
 
-export default function WhatsAppSettings({ config, botStatus, loading, error, onSave }: WhatsAppSettingsProps) {
+export default function WhatsAppSettings({ config, botStatus, error, onSave }: WhatsAppSettingsProps) {
   const [form, setForm] = useState<WhatsAppConfigFormData>({
     phone_number_id: config?.phone_number_id ?? '',
     token: config?.token ?? '',

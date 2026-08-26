@@ -3,7 +3,6 @@ import { RiNotification3Line, RiCheckDoubleLine, RiDeleteBinLine } from 'react-i
 import { supabase } from '../../config/supabaseClient';
 import { useAuthContext } from '../../contexts/AuthContext';
 import { useNotifications } from '../../contexts/NotificationContext';
-import Badge from '../ui/Badge';
 
 interface SupabaseNotification {
   id_notificacion: number;

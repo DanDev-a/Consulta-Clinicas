@@ -9,7 +9,7 @@ export default function WhatsAppRouter() {
   const {
     config, logs, totalLogs, logPage, LOG_PAGE_SIZE,
     loading, error, logFilters,
-    setLogFilters, setLogPage, saveConfig, fetchLogs,
+    setLogFilters, setLogPage, saveConfig,
   } = useWhatsApp();
 
   const [botStatus, setBotStatus] = useState('DISCONNECTED');
@@ -48,7 +48,6 @@ export default function WhatsAppRouter() {
           <WhatsAppSettings
             config={config}
             botStatus={botStatus}
-            loading={loading}
             error={error}
             onSave={saveConfig}
           />
