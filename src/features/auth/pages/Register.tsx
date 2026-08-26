@@ -49,7 +49,7 @@ export default function Register() {
   const [apellido, setApellido] = useState('');
   const [ci, setCi] = useState('');
   const [fechaNacimiento, setFechaNacimiento] = useState('');
-  const [sexo, setSexo] = useState('');
+  const [sexo, setSexo] = useState('M');
   const [telefono, setTelefono] = useState('');
   const [direccion, setDireccion] = useState('');
   const [ciudad, setCiudad] = useState('');
