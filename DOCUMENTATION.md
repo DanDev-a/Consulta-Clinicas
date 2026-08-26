@@ -1233,7 +1233,7 @@ Barra de navegación de la landing con links de anclaje y CTA.
 - Fija arriba con `backdrop-blur`
 - Botón "Sacar turno" que lleva a `/auth/register`
 - Móvil: botón hamburguesa que abre `MobileMenu`
-- Logo: "N" + "Clínica Nova"
+- Logo: "N" + "Clinica Proyecto"
 
 ---
 
@@ -1316,7 +1316,7 @@ Layout para páginas de autenticación (login, register). Centrado con tarjeta.
 ┌──────────────────────────────┐
 │                              │
 │     ┌──────────────────┐     │
-│     │   🩺 Clínica Nova │     │
+│     │   🩺 Clinica Proyecto │     │
 │     │                  │     │
 │     │   ┌──────────┐   │     │
 │     │   │ <Outlet/>│   │     │

@@ -33,7 +33,7 @@ export function useChatMedico(userId: string | undefined) {
     setError(null);
 
     try {
-      const systemContext = `Sos un asistente médico de la Clínica Nova.
+      const systemContext = `Sos un asistente médico de la Clinica Proyecto.
 Respondé en español, de forma clara y concisa.
 Si no estás seguro de algo, decilo.
 No reemplazás la opinión de un médico profesional.

@@ -82,7 +82,7 @@ process.on('unhandledRejection', (reason) => {
 });
 
 async function main() {
-  console.log('🚀 Iniciando WhatsApp Bot para Clinica Nova...');
+  console.log('🚀 Iniciando WhatsApp Bot para Clinica Proyecto...');
   console.log(`📌 Environment: ${config.nodeEnv}`);
   console.log(`📌 Log level: ${config.logLevel}`);
   console.log(`📌 Worker interval: ${config.workerIntervalMs / 1000}s`);

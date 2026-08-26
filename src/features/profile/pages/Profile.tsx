@@ -201,7 +201,7 @@ export default function Profile() {
                 label="Telefono"
                 value={telefono}
                 onChange={(e) => setTelefono(e.target.value)}
-                placeholder="+54 11 1234-5678"
+                placeholder="+591 7 1234567"
                 type="tel"
               />
             )}
@@ -236,7 +236,7 @@ export default function Profile() {
                     label="Ciudad"
                     value={ciudad}
                     onChange={(e) => setCiudad(e.target.value)}
-                    placeholder="Buenos Aires"
+                    placeholder="La Paz"
                   />
                   <Select
                     label="Grupo sanguineo"

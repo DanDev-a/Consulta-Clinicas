@@ -4,7 +4,7 @@ import { groq, GROQ_MODEL } from '../config/groqClient';
 import type { DiagnosticoResultado, DiagnosticoIA } from '../types/ai';
 import { validateDiagnosticoResultado } from '../types/ai';
 
-const SYSTEM_PROMPT = `Sos un asistente médico de la Clínica Nova. Analizá los síntomas del paciente y devolvé un JSON con:
+const SYSTEM_PROMPT = `Sos un asistente médico de la Clinica Proyecto. Analizá los síntomas del paciente y devolvé un JSON con:
 {
   "diagnosticos": [
     {

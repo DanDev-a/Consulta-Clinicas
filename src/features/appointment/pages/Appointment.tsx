@@ -52,8 +52,8 @@ export default function Appointment({ userRole, userId }: AppointmentPageProps) 
   const handleDragDrop = useCallback(async (appointmentId: number, newDate: Date) => {
     const ok = await updateAppointmentTime(appointmentId, newDate);
     if (ok) {
-      const dateStr = newDate.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
-      const timeStr = newDate.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+      const dateStr = newDate.toLocaleDateString('es-BO', { day: '2-digit', month: '2-digit' });
+      const timeStr = newDate.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' });
       toast.success(`Cita reprogramada para ${dateStr} ${timeStr}`, { icon: '📅' });
     } else {
       toast.error('Error al reprogramar la cita');

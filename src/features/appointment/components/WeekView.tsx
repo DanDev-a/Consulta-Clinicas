@@ -50,7 +50,7 @@ function getEventPosition(fechaHora: string): { top: number; height: number } {
 
 function formatTime(iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' });
 }
 
 export default function WeekView({ currentDate, appointments, onSelectEvent, onSelectSlot, onDrop }: WeekViewProps) {

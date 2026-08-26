@@ -58,7 +58,7 @@ export default function ChatMedico({ messages, loading, error, onSend }: ChatMed
             }`}>
               <div className="whitespace-pre-wrap">{msg.content}</div>
               <div className={`text-xs mt-1 ${msg.role === 'user' ? 'text-white/70' : 'text-[var(--color-text-muted)]'}`}>
-                {msg.timestamp.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                {msg.timestamp.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' })}
               </div>
             </div>
             {msg.role === 'user' && (

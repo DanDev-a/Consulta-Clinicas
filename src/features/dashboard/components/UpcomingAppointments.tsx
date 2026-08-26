@@ -36,7 +36,7 @@ export default function UpcomingAppointments({ appointments }: UpcomingAppointme
               Dr. {a.doctorNombre} {a.doctorApellido} - {a.especialidad}
             </p>
             <p className="text-xs text-[var(--color-text-subtle)]">
-              {new Date(a.fechaHora).toLocaleDateString('es-AR', {
+              {new Date(a.fechaHora).toLocaleDateString('es-BO', {
                 day: '2-digit',
                 month: 'short',
                 hour: '2-digit',

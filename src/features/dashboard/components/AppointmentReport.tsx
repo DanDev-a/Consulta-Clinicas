@@ -27,7 +27,7 @@ export default function AppointmentReport({ data }: Props) {
           {data.map((row) => (
             <tr key={row.fecha} className="border-b border-[var(--color-border-light)] hover:bg-[var(--color-surface-alt)]">
               <td className="py-2 px-3 text-[var(--color-text)]">
-                {new Date(row.fecha + 'T12:00:00').toLocaleDateString('es-AR')}
+                {new Date(row.fecha + 'T12:00:00').toLocaleDateString('es-BO')}
               </td>
               <td className="py-2 px-3 text-right font-medium text-[var(--color-text)]">{row.total}</td>
               <td className="py-2 px-3 text-right"><Badge variant="warning" size="sm">{row.pendientes}</Badge></td>

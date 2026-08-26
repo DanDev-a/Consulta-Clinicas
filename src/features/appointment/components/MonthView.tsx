@@ -70,7 +70,7 @@ function getStatusTextColor(status: string): string {
 }
 
 function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+  return new Date(iso).toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' });
 }
 
 export default function MonthView({ currentDate, appointments, onSelectEvent, onSelectDay }: MonthViewProps) {

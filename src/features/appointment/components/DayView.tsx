@@ -16,7 +16,7 @@ const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR
 
 function formatTime(iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' });
 }
 
 function getEventPosition(fechaHora: string): { top: number; height: number } {
@@ -100,7 +100,7 @@ export default function DayView({ currentDate, appointments, onSelectEvent, onSe
         <div className="cal-day-header" style={{ borderRight: '1px solid var(--color-border-light)' }} />
         <div className={`cal-day-header ${isToday ? 'cal-day-header-today' : ''}`}>
           <div className="cal-day-header-name">
-            {currentDate.toLocaleDateString('es-AR', { weekday: 'long' })}
+            {currentDate.toLocaleDateString('es-BO', { weekday: 'long' })}
           </div>
           <div className="cal-day-header-number">{currentDate.getDate()}</div>
         </div>

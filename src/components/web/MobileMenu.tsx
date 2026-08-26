@@ -26,10 +26,10 @@ export default function MobileMenu({ open, onClose, links }: MobileMenuProps) {
       </ul>
       <div className="flex flex-col gap-2 px-4 pb-4 border-t border-border pt-4">
         <a
-          href="tel:+541145678900"
+          href="tel:+59171234567"
           className="px-4 py-2.5 text-sm font-medium text-center rounded-lg border border-border text-text-muted hover:text-text hover:bg-surface-alt transition-colors duration-200"
         >
-          Llamar: +54 11 4567-8900
+          Llamar: +591 7 1234567
         </a>
         <Link
           to="/auth/register"

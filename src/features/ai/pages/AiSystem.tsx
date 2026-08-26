@@ -219,7 +219,7 @@ export default function AiSystem({ userRole, userId }: AiSystemPageProps) {
                       <div key={h.id_diagnostico_ia} className="p-4 bg-[var(--color-bg-secondary)] rounded-xl flex items-center justify-between">
                         <div>
                           <div className="text-sm font-medium">Diagnóstico #{h.id_diagnostico_ia}</div>
-                          <div className="text-xs text-[var(--color-text-muted)]">{new Date(h.fecha_generacion).toLocaleString('es-AR')}</div>
+                          <div className="text-xs text-[var(--color-text-muted)]">{new Date(h.fecha_generacion).toLocaleString('es-BO')}</div>
                         </div>
                         <Badge variant={
                           h.estado_validacion === 'ACEPTADO' ? 'success' :

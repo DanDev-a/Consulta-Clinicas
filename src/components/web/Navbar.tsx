@@ -20,7 +20,7 @@ export default function Navbar() {
           <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-text-inverse text-sm font-bold">
             N
           </span>
-          Clínica Nova
+          Clinica Proyecto
         </a>
 
         <ul className="hidden md:flex items-center gap-1">
@@ -38,10 +38,10 @@ export default function Navbar() {
 
         <div className="hidden md:flex items-center gap-3">
           <a
-            href="tel:+541145678900"
+            href="tel:+59171234567"
             className="px-4 py-2 text-sm font-medium text-text-muted hover:text-text transition-colors duration-200"
           >
-            +54 11 4567-8900
+            +591 7 1234567
           </a>
           <Link
             to="/auth/register"

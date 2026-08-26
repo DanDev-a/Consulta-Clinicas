@@ -57,7 +57,7 @@ export default function LayoutShowcase() {
                 </Card.Header>
                 <Card.Body>
                   <p className="text-sm text-[var(--color-text-muted)]">
-                    Cardiología · MN 12345 · 20 años de experiencia
+                    Cardiología · CMP 12345 · 20 años de experiencia
                   </p>
                 </Card.Body>
                 <Card.Footer>

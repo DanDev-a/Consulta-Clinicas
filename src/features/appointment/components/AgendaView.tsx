@@ -26,7 +26,7 @@ function formatDateHeader(dateStr: string): string {
   if (d.toDateString() === today.toDateString()) return 'Hoy';
   if (d.toDateString() === tomorrow.toDateString()) return 'Mañana';
 
-  return d.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
+  return d.toLocaleDateString('es-BO', { weekday: 'long', day: 'numeric', month: 'long' });
 }
 
 export default function AgendaView({ appointments, onSelectEvent }: AgendaViewProps) {
@@ -71,7 +71,7 @@ export default function AgendaView({ appointments, onSelectEvent }: AgendaViewPr
           <div className="cal-agenda-date">{formatDateHeader(dateStr)}</div>
           {apts.map((apt) => {
             const d = new Date(apt.fecha_hora);
-            const time = d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+            const time = d.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' });
             const doctorName = apt.doctor?.usuario
               ? `${apt.doctor.usuario.nombre} ${apt.doctor.usuario.apellido}`
               : 'Sin asignar';

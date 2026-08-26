@@ -56,7 +56,7 @@ export default function WhatsAppSettings({ config, botStatus, error, onSave }: W
           label="Número de visualización"
           value={form.numero_display}
           onChange={e => setForm(prev => ({ ...prev, numero_display: e.target.value }))}
-          placeholder="+5491155551234"
+          placeholder="+59171234567"
         />
       </div>
 

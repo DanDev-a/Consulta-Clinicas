@@ -94,7 +94,7 @@ export default function WhatsAppLogs({
                   const nombrePaciente = usuario ? `${usuario.nombre} ${usuario.apellido}` : '—';
                   return (
                     <tr key={log.id} className="border-b border-[var(--color-border-light)] hover:bg-[var(--color-surface-alt)]">
-                      <td className="py-3 px-2">{new Date(log.fecha_envio).toLocaleString('es-AR')}</td>
+                      <td className="py-3 px-2">{new Date(log.fecha_envio).toLocaleString('es-BO')}</td>
                       <td className="py-3 px-2 font-medium">{nombrePaciente}</td>
                       <td className="py-3 px-2">{log.tipo}</td>
                       <td className="py-3 px-2 font-mono text-xs">{log.phone_number}</td>

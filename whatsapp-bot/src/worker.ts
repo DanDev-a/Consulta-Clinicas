@@ -73,7 +73,7 @@ async function processRecordatorio(rec: RecordatorioRow): Promise<void> {
     ? `Dr. ${rec.cita.doctor.usuario.nombre} ${rec.cita.doctor.usuario.apellido}`
     : 'el doctor';
   const fechaCita = rec.cita?.fecha_hora
-    ? new Date(rec.cita.fecha_hora).toLocaleString('es-AR', { dateStyle: 'medium', timeStyle: 'short' })
+    ? new Date(rec.cita.fecha_hora).toLocaleString('es-BO', { dateStyle: 'medium', timeStyle: 'short' })
     : '';
 
   let mensaje = rec.mensaje;

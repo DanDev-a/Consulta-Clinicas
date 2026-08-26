@@ -16,8 +16,8 @@ interface AppointmentTableProps {
 export default function AppointmentTable({ data, loading, page, totalPages, onPageChange, userRole, onStatusChange, onCancel }: AppointmentTableProps) {
   const formatDateTime = (iso: string) => {
     const d = new Date(iso);
-    return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' +
-           d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleDateString('es-BO', { day: '2-digit', month: '2-digit', year: 'numeric' }) + ' ' +
+           d.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' });
   };
 
   return (

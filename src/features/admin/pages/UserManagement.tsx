@@ -142,7 +142,7 @@ export default function UserManagement() {
                         </span>
                       </td>
                       <td className="px-6 py-3 text-[var(--color-text-muted)]">
-                        {new Date(u.fecha_creacion).toLocaleDateString('es-AR')}
+                        {new Date(u.fecha_creacion).toLocaleDateString('es-BO')}
                       </td>
                     </tr>
                   ))}
@@ -179,7 +179,7 @@ export default function UserManagement() {
                         </span>
                       </td>
                       <td className="px-6 py-3 text-[var(--color-text-muted)]">
-                        {new Date(inv.created_at).toLocaleDateString('es-AR')}
+                        {new Date(inv.created_at).toLocaleDateString('es-BO')}
                       </td>
                       <td className="px-6 py-3">
                         {inv.used ? (

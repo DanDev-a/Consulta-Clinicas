@@ -279,20 +279,20 @@ export default function Register() {
               </div>
               <Input
                 label="Teléfono (opcional)"
-                placeholder="11-1234-5678"
+                placeholder="7-1234567"
                 value={telefono}
                 onChange={(e) => setTelefono(e.target.value)}
               />
               <Input
                 label="Dirección (opcional)"
-                placeholder="Av. Corrientes 1234"
+                placeholder="Av. Arce 1234"
                 value={direccion}
                 onChange={(e) => setDireccion(e.target.value)}
               />
               <div className="grid grid-cols-2 gap-4">
                 <Input
                   label="Ciudad (opcional)"
-                  placeholder="Buenos Aires"
+                  placeholder="La Paz"
                   value={ciudad}
                   onChange={(e) => setCiudad(e.target.value)}
                 />
@@ -321,14 +321,14 @@ export default function Register() {
               />
               <Input
                 label="Número de licencia"
-                placeholder="MN 12345"
+                placeholder="CMP 12345"
                 value={numeroLicencia}
                 onChange={(e) => setNumeroLicencia(e.target.value)}
                 required
               />
               <Input
                 label="Teléfono (opcional)"
-                placeholder="11-1234-5678"
+                placeholder="7-1234567"
                 value={telefono}
                 onChange={(e) => setTelefono(e.target.value)}
               />

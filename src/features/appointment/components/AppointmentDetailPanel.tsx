@@ -46,8 +46,8 @@ export default function AppointmentDetailPanel({
   if (!isOpen || !appointment) return null;
 
   const fecha = new Date(appointment.fecha_hora);
-  const timeStr = fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-  const dateStr = fecha.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const timeStr = fecha.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' });
+  const dateStr = fecha.toLocaleDateString('es-BO', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
   const canChangeStatus = userRole === 'ADMIN' || userRole === 'DOCTOR' || userRole === 'RECEPCIONISTA';
   const actions = canChangeStatus ? (statusActions[appointment.estado] ?? []) : [];

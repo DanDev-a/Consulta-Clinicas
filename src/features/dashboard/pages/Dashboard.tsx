@@ -88,7 +88,7 @@ export default function Dashboard() {
     <div className="space-y-6">
       <PageHeader
         title={`Bienvenido, ${userName}`}
-        subtitle={new Date().toLocaleDateString('es-AR', {
+        subtitle={new Date().toLocaleDateString('es-BO', {
           weekday: 'long',
           year: 'numeric',
           month: 'long',

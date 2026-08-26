@@ -107,8 +107,8 @@ export default function PatientDetail({ patient }: PatientDetailProps) {
                   {m.dosis && <div className="text-sm text-[var(--color-text-muted)]">Dosis: {m.dosis}</div>}
                   {m.indicacion && <div className="text-sm text-[var(--color-text-muted)]">{m.indicacion}</div>}
                   <div className="text-xs text-[var(--color-text-muted)] mt-1">
-                    Desde: {new Date(m.fecha_inicio).toLocaleDateString('es-AR')}
-                    {m.fecha_fin && ` — Hasta: ${new Date(m.fecha_fin).toLocaleDateString('es-AR')}`}
+                    Desde: {new Date(m.fecha_inicio).toLocaleDateString('es-BO')}
+                    {m.fecha_fin && ` — Hasta: ${new Date(m.fecha_fin).toLocaleDateString('es-BO')}`}
                   </div>
                 </li>
               ))}
@@ -122,7 +122,7 @@ export default function PatientDetail({ patient }: PatientDetailProps) {
           {expediente ? (
             <div className="space-y-4">
               <div><span className="text-sm text-[var(--color-text-muted)]">ID Expediente</span><p className="font-medium">#{expediente.id_expediente}</p></div>
-              <div><span className="text-sm text-[var(--color-text-muted)]">Fecha de Creación</span><p className="font-medium">{new Date(expediente.fecha_creacion).toLocaleDateString('es-AR')}</p></div>
+              <div><span className="text-sm text-[var(--color-text-muted)]">Fecha de Creación</span><p className="font-medium">{new Date(expediente.fecha_creacion).toLocaleDateString('es-BO')}</p></div>
               <div><span className="text-sm text-[var(--color-text-muted)]">Observaciones</span><p className="font-medium">{expediente.observaciones ?? 'Sin observaciones'}</p></div>
             </div>
           ) : (

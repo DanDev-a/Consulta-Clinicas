@@ -54,37 +54,37 @@ const doctors = [
   {
     name: 'Dr. Alejandro Ruiz',
     specialty: 'Medicina General',
-    license: 'MN 12345',
+    license: 'CMP 12345',
     bio: 'Especialista con 20 años de experiencia en atención primaria. Profesor adjunto en la UBA.',
   },
   {
     name: 'Dra. Sofía Peralta',
     specialty: 'Pediatría',
-    license: 'MN 23456',
+    license: 'CMP 23456',
     bio: 'Residencia en Hospital de Niños Ricardo Gutiérrez. Enfoque en desarrollo infantil temprano.',
   },
   {
     name: 'Dr. Lucas Benítez',
     specialty: 'Cardiología',
-    license: 'MN 34567',
+    license: 'CMP 34567',
     bio: 'Fellowship en hemodinamia. Referente en prevención cardiovascular y rehabilitación.',
   },
   {
     name: 'Dra. Valentina López',
     specialty: 'Dermatología',
-    license: 'MN 45678',
+    license: 'CMP 45678',
     bio: 'Especialista en dermatología clínica y estética. Certificación internacional en láseres.',
   },
   {
     name: 'Dr. Mateo Álvarez',
     specialty: 'Traumatología',
-    license: 'MN 56789',
+    license: 'CMP 56789',
     bio: 'Cirujano ortopédico. Ex-profesor del Hospital Italiano. Enfoque en cirugía artroscópica.',
   },
   {
     name: 'Dra. Camila Herrera',
     specialty: 'Ginecología',
-    license: 'MN 67890',
+    license: 'CMP 67890',
     bio: 'Especialista en ginecología obstétrica. Más de 15 años acompañando embarazos.',
   },
 ];
@@ -110,7 +110,7 @@ const bookingSteps = [
 const testimonials = [
   {
     name: 'María González',
-    text: 'Llevo a mi familia a Clínica Nova hace 5 años. Los doctores son excelentes y siempre nos tratan con mucha paciencia y profesionalismo.',
+    text: 'Llevo a mi familia a Clinica Proyecto hace 5 años. Los doctores son excelentes y siempre nos tratan con mucha paciencia y profesionalismo.',
     rating: 5,
   },
   {
@@ -142,7 +142,7 @@ export default function Home() {
             <span className="text-accent">prioridad</span>
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-lg text-text-muted leading-relaxed">
-            Centro médico multidisciplinario en Buenos Aires. Contamos con más de 20 especialidades
+            Centro médico multidisciplinario en La Paz. Contamos con más de 20 especialidades
             y un equipo de profesionales comprometidos con tu bienestar.
           </p>
           <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
@@ -154,7 +154,7 @@ export default function Home() {
               Sacá tu turno online
             </Link>
             <a
-              href="tel:+541145678900"
+              href="tel:+59171234567"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-border text-text-muted font-medium hover:bg-surface-alt hover:text-text transition-colors duration-200"
             >
               <RiPhoneLine />
@@ -314,7 +314,7 @@ export default function Home() {
               Contacto y ubicación
             </h2>
             <p className="mt-4 text-lg text-text-muted">
-              Estamos en el corazón de Buenos Aires, con acceso fácil en transporte público.
+              Estamos en el corazón de La Paz, con acceso fácil en transporte público.
             </p>
           </div>
           <div className="mt-14 grid gap-8 md:grid-cols-2">
@@ -326,7 +326,7 @@ export default function Home() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-text">Dirección</h3>
-                  <p className="mt-1 text-sm text-text-muted">Av. Corrientes 1234, Piso 3, Buenos Aires (CABA)</p>
+                  <p className="mt-1 text-sm text-text-muted">Av. Arce 1234, Piso 3, La Paz</p>
                 </div>
               </div>
               <div className="flex items-start gap-4 rounded-2xl border border-border bg-surface p-5">
@@ -335,7 +335,7 @@ export default function Home() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-text">Teléfono</h3>
-                  <p className="mt-1 text-sm text-text-muted">+54 11 4567-8900</p>
+                  <p className="mt-1 text-sm text-text-muted">+591 7 1234567</p>
                   <p className="text-xs text-text-subtle">WhatsApp disponible</p>
                 </div>
               </div>
@@ -355,7 +355,7 @@ export default function Home() {
               <div className="text-center text-text-muted">
                 <RiMapPin2Line className="mx-auto text-4xl mb-3 text-accent" />
                 <p className="text-sm">Mapa de ubicación</p>
-                <p className="text-xs text-text-subtle">Av. Corrientes 1234, CABA</p>
+                <p className="text-xs text-text-subtle">Av. Arce 1234, La Paz, Bolivia</p>
               </div>
             </div>
           </div>
@@ -380,11 +380,11 @@ export default function Home() {
               Reservá tu turno
             </Link>
             <a
-              href="tel:+541145678900"
+              href="tel:+59171234567"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-border text-text-muted font-medium hover:bg-surface-alt hover:text-text transition-colors duration-200"
             >
               <RiPhoneLine />
-              +54 11 4567-8900
+              +591 7 1234567
             </a>
           </div>
         </div>

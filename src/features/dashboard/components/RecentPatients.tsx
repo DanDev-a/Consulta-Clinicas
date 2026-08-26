@@ -28,7 +28,7 @@ export default function RecentPatients({ patients }: RecentPatientsProps) {
             <p className="text-xs text-[var(--color-text-muted)] truncate">{p.email}</p>
           </div>
           <Badge variant="info" size="sm">
-            {new Date(p.fechaRegistro).toLocaleDateString('es-AR')}
+            {new Date(p.fechaRegistro).toLocaleDateString('es-BO')}
           </Badge>
         </div>
       ))}
