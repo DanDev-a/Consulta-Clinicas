@@ -140,6 +140,9 @@ BEGIN
             NULLIF(NEW.raw_user_meta_data ->> 'ciudad', ''),
             NULLIF(NEW.raw_user_meta_data ->> 'grupo_sanguineo', '')
         );
+
+        INSERT INTO expediente (id_paciente)
+        VALUES (NEW.id);
     END IF;
 
     IF user_rol = 'DOCTOR' THEN
@@ -699,6 +702,7 @@ CREATE POLICY "admin_select_horario"         ON horario_doctor FOR SELECT USING 
 CREATE POLICY "own_select_horario"           ON horario_doctor FOR SELECT USING (id_doctor = auth.uid());
 CREATE POLICY "recepcionista_select_horario" ON horario_doctor FOR SELECT USING (is_recepcionista());
 CREATE POLICY "admin_doctor_all_horario"     ON horario_doctor FOR ALL USING (is_admin() OR id_doctor = auth.uid());
+CREATE POLICY "authenticated_select_horario" ON horario_doctor FOR SELECT USING (auth.role() = 'authenticated');
 
 
 -- =====================================================
@@ -782,6 +786,7 @@ CREATE POLICY "doctor_update_cita"        ON cita FOR UPDATE USING (id_doctor = 
 CREATE POLICY "paciente_cancel_cita"      ON cita FOR UPDATE USING (
     id_paciente = auth.uid() AND estado = 'PENDIENTE'
 );
+CREATE POLICY "paciente_insert_cita"     ON cita FOR INSERT WITH CHECK (id_paciente = auth.uid());
 CREATE POLICY "admin_all_cita"            ON cita FOR ALL USING (is_admin());
 
 
@@ -864,6 +869,7 @@ CREATE POLICY "doctor_select_diagnostico_ia" ON diagnostico_ia FOR SELECT USING 
     )
 );
 CREATE POLICY "doctor_update_diagnostico_ia" ON diagnostico_ia FOR UPDATE USING (is_doctor());
+CREATE POLICY "doctor_insert_diagnostico_ia" ON diagnostico_ia FOR INSERT WITH CHECK (is_doctor());
 CREATE POLICY "admin_all_diagnostico_ia"     ON diagnostico_ia FOR ALL USING (is_admin());
 
 
@@ -1230,6 +1236,16 @@ BEGIN
     FOR UPDATE USING (is_admin());
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+
+-- =====================================================
+-- MIGRACIÓN: Auto-crear expediente para pacientes existentes
+-- Ejecutar una sola vez en el SQL Editor de Supabase
+-- =====================================================
+
+INSERT INTO expediente (id_paciente)
+SELECT id_paciente FROM paciente
+WHERE id_paciente NOT IN (SELECT id_paciente FROM expediente);
 
 
 

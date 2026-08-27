@@ -1,19 +1,27 @@
 import { useEffect, useState } from 'react';
-import { Tabs, Card, Badge, Alert } from '../../../components/ui';
+import { Tabs, Card, Badge, Alert, Button, Textarea } from '../../../components/ui';
+import { RiEditLine, RiCheckLine, RiCloseLine } from 'react-icons/ri';
+import toast from 'react-hot-toast';
 import { supabase } from '../../../config/supabaseClient';
 import type { Patient, PatientAlergia, PatientMedicamento, Expediente } from '../types/patient';
 
 interface PatientDetailProps {
   patient: Patient;
   userRole: string | undefined;
+  onExpedienteUpdate?: (observaciones: string) => Promise<boolean>;
 }
 
-export default function PatientDetail({ patient }: PatientDetailProps) {
+export default function PatientDetail({ patient, userRole, onExpedienteUpdate }: PatientDetailProps) {
   const [alergias, setAlergias] = useState<PatientAlergia[]>([]);
   const [medicamentos, setMedicamentos] = useState<PatientMedicamento[]>([]);
   const [expediente, setExpediente] = useState<Expediente | null>(null);
   const [citasCount, setCitasCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [editingExpediente, setEditingExpediente] = useState(false);
+  const [expedienteObs, setExpedienteObs] = useState('');
+  const [savingExpediente, setSavingExpediente] = useState(false);
+
+  const canEditExpediente = userRole === 'ADMIN' || userRole === 'DOCTOR';
 
   useEffect(() => {
     const load = async () => {
@@ -47,6 +55,30 @@ export default function PatientDetail({ patient }: PatientDetailProps) {
     const birth = new Date(dob);
     const age = Math.floor((Date.now() - birth.getTime()) / (365.25 * 24 * 60 * 60 * 1000));
     return age;
+  };
+
+  const handleEditExpediente = () => {
+    setExpedienteObs(expediente?.observaciones ?? '');
+    setEditingExpediente(true);
+  };
+
+  const handleSaveExpediente = async () => {
+    if (!onExpedienteUpdate) return;
+    setSavingExpediente(true);
+    const ok = await onExpedienteUpdate(expedienteObs);
+    setSavingExpediente(false);
+    if (ok) {
+      setExpediente(prev => prev ? { ...prev, observaciones: expedienteObs } : null);
+      setEditingExpediente(false);
+      toast.success('Expediente actualizado');
+    } else {
+      toast.error('Error al actualizar expediente');
+    }
+  };
+
+  const handleCancelEditExpediente = () => {
+    setEditingExpediente(false);
+    setExpedienteObs('');
   };
 
   return (
@@ -121,9 +153,39 @@ export default function PatientDetail({ patient }: PatientDetailProps) {
         <Card className="p-6">
           {expediente ? (
             <div className="space-y-4">
-              <div><span className="text-sm text-[var(--color-text-muted)]">ID Expediente</span><p className="font-medium">#{expediente.id_expediente}</p></div>
+              <div className="flex items-center justify-between">
+                <div><span className="text-sm text-[var(--color-text-muted)]">ID Expediente</span><p className="font-medium">#{expediente.id_expediente}</p></div>
+                {canEditExpediente && !editingExpediente && (
+                  <Button variant="ghost" size="sm" onClick={handleEditExpediente}>
+                    <RiEditLine className="mr-1" /> Editar
+                  </Button>
+                )}
+                {editingExpediente && (
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="sm" onClick={handleSaveExpediente} disabled={savingExpediente}>
+                      <RiCheckLine className="mr-1" /> {savingExpediente ? 'Guardando...' : 'Guardar'}
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={handleCancelEditExpediente}>
+                      <RiCloseLine className="mr-1" /> Cancelar
+                    </Button>
+                  </div>
+                )}
+              </div>
               <div><span className="text-sm text-[var(--color-text-muted)]">Fecha de Creación</span><p className="font-medium">{new Date(expediente.fecha_creacion).toLocaleDateString('es-BO')}</p></div>
-              <div><span className="text-sm text-[var(--color-text-muted)]">Observaciones</span><p className="font-medium">{expediente.observaciones ?? 'Sin observaciones'}</p></div>
+              <div>
+                <span className="text-sm text-[var(--color-text-muted)]">Observaciones</span>
+                {editingExpediente ? (
+                  <Textarea
+                    label="Observaciones"
+                    value={expedienteObs}
+                    onChange={e => setExpedienteObs(e.target.value)}
+                    placeholder="Agregar observaciones del expediente..."
+                    className="mt-1"
+                  />
+                ) : (
+                  <p className="font-medium">{expediente.observaciones ?? 'Sin observaciones'}</p>
+                )}
+              </div>
             </div>
           ) : (
             <Alert variant="warning">No se encontró expediente para este paciente</Alert>

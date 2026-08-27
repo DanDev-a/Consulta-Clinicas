@@ -20,7 +20,7 @@ export default function PatientDetailPage({ userRole, userId }: PatientDetailPag
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showEditForm, setShowEditForm] = useState(false);
-  const { getPatientById, updatePatient } = usePatients(userRole, userId);
+  const { getPatientById, updatePatient, updateExpediente } = usePatients(userRole, userId);
 
   const isAdmin = userRole === 'ADMIN';
   const isDoctor = userRole === 'DOCTOR';
@@ -49,6 +49,11 @@ export default function PatientDetailPage({ userRole, userId }: PatientDetailPag
       toast.error('Error al actualizar');
     }
     return ok;
+  };
+
+  const handleExpedienteUpdate = async (observaciones: string): Promise<boolean> => {
+    if (!id) return false;
+    return await updateExpediente(id, observaciones);
   };
 
   const toFormData = (p: Patient): PatientFormData => ({
@@ -80,7 +85,7 @@ export default function PatientDetailPage({ userRole, userId }: PatientDetailPag
         }
       />
 
-      <PatientDetail patient={patient} userRole={userRole} />
+      <PatientDetail patient={patient} userRole={userRole} onExpedienteUpdate={handleExpedienteUpdate} />
 
       <PatientForm
         isOpen={showEditForm}

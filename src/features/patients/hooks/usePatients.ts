@@ -238,10 +238,24 @@ export function usePatients(userRole: string | undefined, userId: string | undef
     return data as Expediente | null;
   };
 
+  const updateExpediente = async (idPaciente: string, observaciones: string): Promise<boolean> => {
+    try {
+      const { error } = await supabase
+        .from('expediente')
+        .update({ observaciones })
+        .eq('id_paciente', idPaciente);
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al actualizar expediente');
+      return false;
+    }
+  };
+
   return {
     loading, error, patients, total, page, PAGE_SIZE,
     setPage, filters, setFilters,
     fetchPatients, createPatient, updatePatient, deletePatient,
-    getPatientById, getPatientAlergias, getPatientMedicamentos, getPatientExpediente,
+    getPatientById, getPatientAlergias, getPatientMedicamentos, getPatientExpediente, updateExpediente,
   };
 }

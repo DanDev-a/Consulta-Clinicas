@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Modal, Select, DatePicker, Textarea, Button } from '../../../components/ui';
+import TimeSlotPicker from './TimeSlotPicker';
 import type { AppointmentFormData } from '../types/appointment';
+
+const TIME_SLOTS = [
+  '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+  '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00', '17:30',
+];
 
 interface AppointmentFormProps {
   isOpen: boolean;
@@ -13,6 +19,8 @@ interface AppointmentFormProps {
 
 export default function AppointmentForm({ isOpen, onClose, onSubmit, fetchDoctors, fetchPatients, initialDateTime }: AppointmentFormProps) {
   const [form, setForm] = useState<AppointmentFormData>({ id_paciente: '', id_doctor: '', fecha_hora: '', motivo: '' });
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
   const [loading, setLoading] = useState(false);
   const [doctors, setDoctors] = useState<Array<{ value: string; label: string }>>([]);
   const [patients, setPatients] = useState<Array<{ value: string; label: string }>>([]);
@@ -21,8 +29,15 @@ export default function AppointmentForm({ isOpen, onClose, onSubmit, fetchDoctor
   useEffect(() => {
     if (isOpen) {
       if (initialDateTime) {
-        setForm(prev => ({ ...prev, fecha_hora: initialDateTime }));
+        const dt = new Date(initialDateTime);
+        const dateStr = dt.toISOString().slice(0, 10);
+        const timeStr = dt.toTimeString().slice(0, 5);
+        setSelectedDate(dateStr);
+        setSelectedTime(timeStr);
+        setForm(prev => ({ ...prev, fecha_hora: `${dateStr}T${timeStr}:00` }));
       } else {
+        setSelectedDate('');
+        setSelectedTime('');
         setForm({ id_paciente: '', id_doctor: '', fecha_hora: '', motivo: '' });
       }
       Promise.all([fetchDoctors(), fetchPatients()]).then(([docs, pacs]) => {
@@ -32,11 +47,26 @@ export default function AppointmentForm({ isOpen, onClose, onSubmit, fetchDoctor
     }
   }, [isOpen, initialDateTime]);
 
+  const handleDateChange = (date: string) => {
+    setSelectedDate(date);
+    if (selectedTime) {
+      setForm(prev => ({ ...prev, fecha_hora: `${date}T${selectedTime}:00` }));
+    }
+  };
+
+  const handleTimeSelect = (time: string) => {
+    setSelectedTime(time);
+    if (selectedDate) {
+      setForm(prev => ({ ...prev, fecha_hora: `${selectedDate}T${time}:00` }));
+    }
+  };
+
   const validate = (): boolean => {
     const errs: Record<string, string> = {};
     if (!form.id_paciente) errs.id_paciente = 'Seleccioná un paciente';
     if (!form.id_doctor) errs.id_doctor = 'Seleccioná un doctor';
-    if (!form.fecha_hora) errs.fecha_hora = 'Seleccioná fecha y hora';
+    if (!selectedDate) errs.fecha = 'Seleccioná una fecha';
+    if (!selectedTime) errs.hora = 'Seleccioná un horario';
     setErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -51,12 +81,20 @@ export default function AppointmentForm({ isOpen, onClose, onSubmit, fetchDoctor
 
   const update = (field: keyof AppointmentFormData, value: string) => setForm(prev => ({ ...prev, [field]: value }));
 
+  const availableSlots = TIME_SLOTS.map(time => ({
+    time,
+    label: time,
+    available: true,
+  }));
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Nueva Cita" size="lg">
       <div className="space-y-4">
         <Select label="Paciente *" options={patients} value={form.id_paciente} onChange={e => update('id_paciente', e.target.value)} error={errors.id_paciente} placeholder="Seleccionar paciente" />
         <Select label="Doctor *" options={doctors} value={form.id_doctor} onChange={e => update('id_doctor', e.target.value)} error={errors.id_doctor} placeholder="Seleccionar doctor" />
-        <DatePicker label="Fecha y Hora *" value={form.fecha_hora} onChange={e => update('fecha_hora', e.target.value)} error={errors.fecha_hora} />
+        <DatePicker label="Fecha *" type="date" value={selectedDate} onChange={e => handleDateChange(e.target.value)} error={errors.fecha} />
+        <TimeSlotPicker slots={availableSlots} selected={selectedTime} onSelect={handleTimeSelect} />
+        {errors.hora && <span className="text-xs text-[var(--color-danger)]" role="alert">{errors.hora}</span>}
         <Textarea label="Motivo de la consulta" value={form.motivo} onChange={e => update('motivo', e.target.value)} />
 
         <div className="flex justify-end gap-2 pt-4 border-t border-[var(--color-border-light)]">

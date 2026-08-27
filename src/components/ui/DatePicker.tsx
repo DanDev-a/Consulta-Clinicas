@@ -4,6 +4,7 @@ import { RiCalendarLine } from 'react-icons/ri';
 interface DatePickerProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
   label: string;
   error?: string;
+  type?: 'date' | 'datetime-local';
 }
 
 export default function DatePicker({
@@ -11,6 +12,7 @@ export default function DatePicker({
   error,
   id,
   className = '',
+  type = 'date',
   ...props
 }: DatePickerProps) {
   const dateId = id || label.toLowerCase().replace(/\s+/g, '-');
@@ -25,7 +27,7 @@ export default function DatePicker({
       </label>
       <div className="relative">
         <input
-          type="date"
+          type={type}
           id={dateId}
           aria-describedby={error ? `${dateId}-error` : undefined}
           aria-invalid={error ? 'true' : undefined}

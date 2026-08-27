@@ -6,6 +6,7 @@ import AppointmentTable from '../components/AppointmentTable';
 import AppointmentForm from '../components/AppointmentForm';
 import AppointmentCalendar from '../components/AppointmentCalendar';
 import AppointmentFilters from '../components/AppointmentFilters';
+import BookingWizard from '../components/BookingWizard';
 import { useAppointments } from '../hooks/useAppointments';
 import type { AppointmentStatus } from '../types/appointment';
 
@@ -16,17 +17,19 @@ interface AppointmentPageProps {
 
 export default function Appointment({ userRole, userId }: AppointmentPageProps) {
   const [showForm, setShowForm] = useState(false);
+  const [showWizard, setShowWizard] = useState(false);
   const [initialDateTime, setInitialDateTime] = useState<string | undefined>();
   const [activeTab, setActiveTab] = useState<'list' | 'calendar'>(canViewCalendar(userRole) ? 'calendar' : 'list');
   const {
     loading, error, appointments, total, page, PAGE_SIZE,
     setPage, filters, setFilters,
-    createAppointment, updateAppointmentStatus, cancelAppointment, updateAppointmentTime,
+    fetchAppointments, createAppointment, updateAppointmentStatus, cancelAppointment, updateAppointmentTime,
     fetchDoctors, fetchAllPatients,
   } = useAppointments(userRole, userId);
 
   const isAdmin = userRole === 'ADMIN';
   const isRecepcionista = userRole === 'RECEPCIONISTA';
+  const isPaciente = userRole === 'PACIENTE';
   const canCreate = isAdmin || isRecepcionista;
   const showCalendar = canViewCalendar(userRole);
 
@@ -60,17 +63,44 @@ export default function Appointment({ userRole, userId }: AppointmentPageProps) 
     }
   }, [updateAppointmentTime]);
 
+  const handleWizardBooked = () => {
+    setShowWizard(false);
+    fetchAppointments();
+  };
+
   const totalPages = Math.ceil(total / PAGE_SIZE);
+
+  if (showWizard && isPaciente && userId) {
+    return (
+      <div className="space-y-6">
+        <BookingWizard
+          userId={userId}
+          onClose={() => setShowWizard(false)}
+          onBooked={handleWizardBooked}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Citas"
+        title={isPaciente ? 'Mis Citas' : 'Citas'}
         subtitle={`${total} cita(s)`}
-        actions={canCreate ? <Button onClick={() => { setInitialDateTime(undefined); setShowForm(true); }}><RiAddLine className="mr-1" />Nueva Cita</Button> : undefined}
+        actions={
+          isPaciente ? (
+            <Button onClick={() => setShowWizard(true)}>
+              <RiAddLine className="mr-1" />Solicitar Cita
+            </Button>
+          ) : canCreate ? (
+            <Button onClick={() => { setInitialDateTime(undefined); setShowForm(true); }}>
+              <RiAddLine className="mr-1" />Nueva Cita
+            </Button>
+          ) : undefined
+        }
       />
 
-      <AppointmentFilters filters={filters} onChange={setFilters} userRole={userRole} />
+      {!isPaciente && <AppointmentFilters filters={filters} onChange={setFilters} userRole={userRole} />}
 
       {error && <Alert variant="danger">{error}</Alert>}
 
