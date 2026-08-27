@@ -177,7 +177,7 @@ export function usePatients(userRole: string | undefined, userId: string | undef
     }
   };
 
-  const getPatientById = async (id: string): Promise<Patient | null> => {
+  const getPatientById = useCallback(async (id: string): Promise<Patient | null> => {
     try {
       const { data, error } = await supabase
         .from('paciente')
@@ -203,7 +203,7 @@ export function usePatients(userRole: string | undefined, userId: string | undef
       setError(err instanceof Error ? err.message : 'Error al cargar paciente');
       return null;
     }
-  };
+  }, []);
 
   const getPatientAlergias = async (id: string): Promise<PatientAlergia[]> => {
     const { data } = await supabase
