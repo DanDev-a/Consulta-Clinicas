@@ -5,7 +5,7 @@ import type { Appointment, AppointmentFormData, AppointmentFilter, AppointmentSt
 
 const PAGE_SIZE = 10;
 
-const SELECT_RELATIONS = '*, paciente:paciente(id_paciente, usuario:usuario(nombre, apellido)), doctor:doctor(id_doctor, usuario:usuario(nombre, apellido), especialidad:especialidad(nombre))';
+const SELECT_RELATIONS = '*, paciente:paciente(id_paciente, usuario:usuario(nombre, apellido, email)), doctor:doctor(id_doctor, usuario:usuario(nombre, apellido), especialidad:especialidad(nombre))';
 
 function mapRowToAppointment(c: Record<string, unknown>): Appointment {
   const paciente = c.paciente as Record<string, unknown> | null;
@@ -24,7 +24,7 @@ function mapRowToAppointment(c: Record<string, unknown>): Appointment {
     fecha_creacion: c.fecha_creacion as string,
     paciente: paciente ? {
       id_paciente: paciente.id_paciente as string,
-      usuario: pacUsuario ? { nombre: pacUsuario.nombre, apellido: pacUsuario.apellido } : null,
+      usuario: pacUsuario ? { nombre: pacUsuario.nombre, apellido: pacUsuario.apellido, email: pacUsuario.email } : null,
     } : null,
     doctor: doctor ? {
       id_doctor: doctor.id_doctor as string,
@@ -53,7 +53,7 @@ export function useAppointments(userRole: string | undefined, userId: string | u
       let query = supabase
         .from('cita')
         .select(
-          '*, paciente:paciente(id_paciente, usuario:usuario(nombre, apellido)), doctor:doctor(id_doctor, usuario:usuario(nombre, apellido), especialidad:especialidad(nombre))',
+          '*, paciente:paciente(id_paciente, usuario:usuario(nombre, apellido, email)), doctor:doctor(id_doctor, usuario:usuario(nombre, apellido), especialidad:especialidad(nombre))',
           { count: 'exact' }
         );
 

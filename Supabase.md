@@ -193,7 +193,7 @@ BEGIN
     END IF;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
 -- Funcion: crear recordatorio de seguimiento al atender cita
@@ -214,7 +214,7 @@ BEGIN
     END IF;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
 -- =====================================================
@@ -642,6 +642,15 @@ ALTER TABLE whatsapp_log           ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "admin_select_usuario" ON usuario FOR SELECT USING (is_admin());
 CREATE POLICY "own_select_usuario"   ON usuario FOR SELECT USING (id_usuario = auth.uid());
+CREATE POLICY "recepcionista_select_usuario" ON usuario FOR SELECT USING (is_recepcionista());
+CREATE POLICY "doctor_select_usuario" ON usuario FOR SELECT USING (
+    id_usuario IN (
+        SELECT p.id_paciente FROM paciente p
+        JOIN cita c ON c.id_paciente = p.id_paciente
+        WHERE c.id_doctor = auth.uid()
+    )
+    OR id_usuario = auth.uid()
+);
 CREATE POLICY "admin_insert_usuario" ON usuario FOR INSERT WITH CHECK (is_admin());
 CREATE POLICY "admin_update_usuario" ON usuario FOR UPDATE USING (is_admin());
 CREATE POLICY "admin_delete_usuario" ON usuario FOR DELETE USING (is_admin());
@@ -896,6 +905,7 @@ CREATE POLICY "own_select_notificacion"    ON notificacion FOR SELECT USING (id_
 -- =====================================================
 
 CREATE POLICY "admin_select_recordatorio" ON recordatorio FOR SELECT USING (is_admin());
+CREATE POLICY "authenticated_insert_recordatorio" ON recordatorio FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 
 
 -- =====================================================
@@ -1246,6 +1256,15 @@ $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 INSERT INTO expediente (id_paciente)
 SELECT id_paciente FROM paciente
 WHERE id_paciente NOT IN (SELECT id_paciente FROM expediente);
+
+
+-- =====================================================
+-- MIGRACIÓN: Agregar columna fecha_atencion a tabla cita
+-- Ejecutar una sola vez en el SQL Editor de Supabase
+-- Permite registrar la fecha/hora real de atención de una cita.
+-- =====================================================
+
+ALTER TABLE cita ADD COLUMN IF NOT EXISTS fecha_atencion TIMESTAMPTZ;
 
 
 

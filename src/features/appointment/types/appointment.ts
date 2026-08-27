@@ -14,6 +14,7 @@ export interface Appointment {
     usuario: {
       nombre: string;
       apellido: string;
+      email?: string;
     } | null;
   } | null;
   doctor?: {
