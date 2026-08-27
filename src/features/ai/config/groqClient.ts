@@ -10,4 +10,4 @@ export const groq = new Groq({
   dangerouslyAllowBrowser: true,
 });
 
-export const GROQ_MODEL = 'qwen/qwen3.6-27b';
+export const GROQ_MODEL = 'openai/gpt-oss-20b';

@@ -64,7 +64,61 @@ export function useDiagnosticoIA(userId: string | undefined) {
         model: GROQ_MODEL,
         temperature: 0.3,
         max_completion_tokens: 2048,
-        response_format: { type: 'json_object' },
+        response_format: {
+          type: 'json_schema',
+          json_schema: {
+            name: 'diagnostico_medico',
+            strict: true,
+            schema: {
+              type: 'object',
+              properties: {
+                diagnosticos: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      nombre: { type: 'string' },
+                      cie10: { type: 'string' },
+                      probabilidad: { type: 'number' },
+                      descripcion: { type: 'string' },
+                    },
+                    required: ['nombre', 'cie10', 'probabilidad', 'descripcion'],
+                    additionalProperties: false,
+                  },
+                },
+                estudios_sugeridos: {
+                  type: 'array',
+                  items: { type: 'string' },
+                },
+                tratamiento_sugerido: {
+                  type: 'object',
+                  properties: {
+                    medicamentos: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          nombre: { type: 'string' },
+                          dosis: { type: 'string' },
+                          frecuencia: { type: 'string' },
+                          duracion: { type: 'string' },
+                        },
+                        required: ['nombre', 'dosis', 'frecuencia', 'duracion'],
+                        additionalProperties: false,
+                      },
+                    },
+                    indicaciones: { type: 'string' },
+                  },
+                  required: ['medicamentos', 'indicaciones'],
+                  additionalProperties: false,
+                },
+                urgencia: { type: 'string', enum: ['baja', 'media', 'alta', 'critica'] },
+              },
+              required: ['diagnosticos', 'estudios_sugeridos', 'tratamiento_sugerido', 'urgencia'],
+              additionalProperties: false,
+            },
+          },
+        },
       });
 
       const content = completion.choices[0]?.message?.content ?? '{}';
