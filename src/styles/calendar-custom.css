@@ -68,6 +68,7 @@
 }
 
 .cal-slot {
+  position: relative;
   height: 48px;
   border-bottom: 0.5px solid var(--color-border-light);
   transition: background-color 0.1s ease;
