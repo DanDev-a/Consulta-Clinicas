@@ -1,5 +1,5 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
-import { formatTimeBolivia, getBoliviaDateComponents, getBoliviaHours, getBoliviaMinutes } from '../../../utils/date';
+import { formatTimeBolivia, getBoliviaDateComponents, getBoliviaHours, getBoliviaMinutes, getBoliviaDateString } from '../../../utils/date';
 import type { Appointment } from '../types/appointment';
 
 interface WeekViewProps {
@@ -13,14 +13,17 @@ interface WeekViewProps {
 const SLOT_HEIGHT = 48;
 const START_HOUR = 8;
 const END_HOUR = 20;
-const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
+const SLOTS_PER_HOUR = 2;
+const SLOT_MINUTES = 30;
+const TOTAL_SLOTS = (END_HOUR - START_HOUR) * SLOTS_PER_HOUR;
 
 const shortDays = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
 
 function getStartOfWeek(date: Date): Date {
+  const comp = getBoliviaDateComponents(date);
+  const dayOfWeek = comp.dayOfWeek;
+  const diff = dayOfWeek === 1 ? 0 : dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
   const d = new Date(date);
-  const day = d.getDay();
-  const diff = day === 0 ? -6 : 1 - day;
   d.setDate(d.getDate() + diff);
   d.setHours(0, 0, 0, 0);
   return d;
@@ -34,25 +37,25 @@ function getWeekDays(startOfWeek: Date): Date[] {
   });
 }
 
-function isSameDay(a: Date, b: Date): boolean {
-  const ca = getBoliviaDateComponents(a);
-  const cb = getBoliviaDateComponents(b);
-  return ca.year === cb.year && ca.month === cb.month && ca.day === cb.day;
-}
-
-function isToday(date: Date): boolean {
-  return isSameDay(date, new Date());
-}
-
 function getEventPosition(fechaHora: string): { top: number; height: number } {
   const d = new Date(fechaHora);
-  const hours = getBoliviaHours(d) + getBoliviaMinutes(d) / 60;
-  const top = (hours - START_HOUR) * SLOT_HEIGHT;
-  return { top: Math.max(0, top), height: 30 };
+  const hours = getBoliviaHours(d);
+  const minutes = getBoliviaMinutes(d);
+  const slotIndex = (hours - START_HOUR) * SLOTS_PER_HOUR + (minutes >= 30 ? 1 : 0);
+  const top = slotIndex * SLOT_HEIGHT;
+  return { top: Math.max(0, top), height: SLOT_HEIGHT - 4 };
 }
 
 function formatTime(iso: string): string {
   return formatTimeBolivia(iso);
+}
+
+function getSlotHour(slotIndex: number): number {
+  return START_HOUR + Math.floor(slotIndex / SLOTS_PER_HOUR);
+}
+
+function getSlotMinute(slotIndex: number): number {
+  return (slotIndex % SLOTS_PER_HOUR) * SLOT_MINUTES;
 }
 
 export default function WeekView({ currentDate, appointments, onSelectEvent, onSelectSlot, onDrop }: WeekViewProps) {
@@ -69,9 +72,9 @@ export default function WeekView({ currentDate, appointments, onSelectEvent, onS
   const weekDays = useMemo(() => getWeekDays(startOfWeek), [startOfWeek]);
 
   const eventsByDay = useMemo(() => {
-    const map = new Map<number, Appointment[]>();
+    const map = new Map<string, Appointment[]>();
     for (const day of weekDays) {
-      map.set(getBoliviaDateComponents(day).day, []);
+      map.set(getBoliviaDateString(day), []);
     }
     for (const apt of appointments) {
       const aptDate = new Date(apt.fecha_hora);
@@ -82,7 +85,7 @@ export default function WeekView({ currentDate, appointments, onSelectEvent, onS
       const startTime = startComp.year * 10000 + startComp.month * 100 + startComp.day;
       const endTime = endComp.year * 10000 + endComp.month * 100 + endComp.day;
       if (aptTime >= startTime && aptTime < endTime) {
-        const dayKey = aptComp.day;
+        const dayKey = getBoliviaDateString(aptDate);
         const existing = map.get(dayKey) ?? [];
         existing.push(apt);
         map.set(dayKey, existing);
@@ -92,15 +95,21 @@ export default function WeekView({ currentDate, appointments, onSelectEvent, onS
   }, [appointments, weekDays, startOfWeek]);
 
   const currentTimePos = useMemo(() => {
-    const h = getBoliviaHours(now) + getBoliviaMinutes(now) / 60;
-    if (h < START_HOUR || h > END_HOUR) return null;
-    return (h - START_HOUR) * SLOT_HEIGHT;
+    const hours = getBoliviaHours(now);
+    const minutes = getBoliviaMinutes(now);
+    if (hours < START_HOUR || hours >= END_HOUR) return null;
+    const slotIndex = (hours - START_HOUR) * SLOTS_PER_HOUR + (minutes >= 30 ? 1 : 0);
+    const partial = (minutes % 30) / 30;
+    return slotIndex * SLOT_HEIGHT + partial * SLOT_HEIGHT;
   }, [now]);
 
   const showCurrentTime = useMemo(() => {
-    const today = new Date();
-    return weekDays.some(d => isSameDay(d, today));
-  }, [weekDays]);
+    return weekDays.some(d => {
+      const dc = getBoliviaDateComponents(d);
+      const nc = getBoliviaDateComponents(now);
+      return dc.year === nc.year && dc.month === nc.month && dc.day === nc.day;
+    });
+  }, [weekDays, now]);
 
   const handleDragStart = useCallback((e: React.DragEvent, aptId: number) => {
     e.dataTransfer.setData('text/plain', String(aptId));
@@ -117,21 +126,23 @@ export default function WeekView({ currentDate, appointments, onSelectEvent, onS
     setDragOverSlot(null);
   }, []);
 
-  const handleSlotDragOver = useCallback((e: React.DragEvent, dayDate: Date, hour: number) => {
+  const handleSlotDragOver = useCallback((e: React.DragEvent, dayDate: Date, slotIdx: number) => {
     e.preventDefault();
     e.stopPropagation();
-    const slotKey = `${getBoliviaDateComponents(dayDate).day}-${hour}`;
+    const slotKey = `${getBoliviaDateString(dayDate)}-${slotIdx}`;
     setDragOverSlot(slotKey);
   }, []);
 
-  const handleSlotDrop = useCallback((e: React.DragEvent, dayDate: Date, hour: number) => {
+  const handleSlotDrop = useCallback((e: React.DragEvent, dayDate: Date, slotIdx: number) => {
     e.preventDefault();
     e.stopPropagation();
     setDragOverSlot(null);
     const aptId = parseInt(e.dataTransfer.getData('text/plain'), 10);
     if (!aptId || !onDrop) return;
-    const newDate = new Date(dayDate);
-    newDate.setHours(hour, 0, 0, 0);
+    const hour = getSlotHour(slotIdx);
+    const minute = getSlotMinute(slotIdx);
+    const dayComp = getBoliviaDateComponents(dayDate);
+    const newDate = new Date(dayComp.year, dayComp.month - 1, dayComp.day, hour, minute, 0, 0);
     onDrop(aptId, newDate);
   }, [onDrop]);
 
@@ -139,10 +150,12 @@ export default function WeekView({ currentDate, appointments, onSelectEvent, onS
     setDragOverSlot(null);
   }, []);
 
-  const handleSlotClick = useCallback((dayDate: Date, hour: number) => {
+  const handleSlotClick = useCallback((dayDate: Date, slotIdx: number) => {
     if (!onSelectSlot) return;
-    const d = new Date(dayDate);
-    d.setHours(hour, 0, 0, 0);
+    const hour = getSlotHour(slotIdx);
+    const minute = getSlotMinute(slotIdx);
+    const dayComp = getBoliviaDateComponents(dayDate);
+    const d = new Date(dayComp.year, dayComp.month - 1, dayComp.day, hour, minute, 0, 0);
     onSelectSlot(d);
   }, [onSelectSlot]);
 
@@ -151,80 +164,98 @@ export default function WeekView({ currentDate, appointments, onSelectEvent, onS
       {/* Day headers */}
       <div className="col-span-full grid grid-cols-[56px_repeat(7,1fr)]" style={{ position: 'sticky', top: 0, zIndex: 15 }}>
         <div className="cal-day-header" style={{ borderRight: '1px solid var(--color-border-light)' }} />
-        {weekDays.map((day, i) => (
-          <div
-            key={i}
-            className={`cal-day-header ${isToday(day) ? 'cal-day-header-today' : ''} ${i >= 5 ? 'cal-day-header-weekend' : ''}`}
-          >
-            <div className="cal-day-header-name">{shortDays[i]}</div>
-            <div className="cal-day-header-number">{getBoliviaDateComponents(day).day}</div>
-          </div>
-        ))}
+        {weekDays.map((day, i) => {
+          const dc = getBoliviaDateComponents(day);
+          const nc = getBoliviaDateComponents(now);
+          const isToday = dc.year === nc.year && dc.month === nc.month && dc.day === nc.day;
+          return (
+            <div
+              key={i}
+              className={`cal-day-header ${isToday ? 'cal-day-header-today' : ''} ${i >= 5 ? 'cal-day-header-weekend' : ''}`}
+            >
+              <div className="cal-day-header-name">{shortDays[i]}</div>
+              <div className="cal-day-header-number">{dc.day}</div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Time grid */}
-      {HOURS.map((hour) => (
-        <div key={hour} className="col-span-full grid grid-cols-[56px_repeat(7,1fr)]">
-          {/* Time label */}
-          <div className="cal-time-label">
-            {String(hour).padStart(2, '0')}:00
-          </div>
+      {Array.from({ length: TOTAL_SLOTS }, (_, slotIdx) => {
+        const hour = getSlotHour(slotIdx);
+        const minute = getSlotMinute(slotIdx);
+        const isHourStart = minute === 0;
 
-          {/* Day cells */}
-          {weekDays.map((day, dayIdx) => {
-            const slotKey = `${getBoliviaDateComponents(day).day}-${hour}`;
-            const isDragOver = dragOverSlot === slotKey;
-            const dayEvents = eventsByDay.get(getBoliviaDateComponents(day).day) ?? [];
-            const slotEvents = dayEvents.filter((apt) => {
-              const d = new Date(apt.fecha_hora);
-              return getBoliviaHours(d) === hour;
-            });
+        return (
+          <div key={slotIdx} className="col-span-full grid grid-cols-[56px_repeat(7,1fr)]">
+            {/* Time label — only show on hour boundaries */}
+            <div className="cal-time-label">
+              {isHourStart ? `${String(hour).padStart(2, '0')}:00` : ''}
+            </div>
 
-            return (
-              <div
-                key={dayIdx}
-                className={`cal-slot ${isDragOver ? 'drag-over' : ''} ${isToday(day) ? 'cal-slot-today' : ''}`}
-                onDragOver={(e) => handleSlotDragOver(e, day, hour)}
-                onDrop={(e) => handleSlotDrop(e, day, hour)}
-                onDragLeave={handleSlotDragLeave}
-                onClick={() => handleSlotClick(day, hour)}
-              >
-                <div className="cal-slot-half" />
+            {/* Day cells */}
+            {weekDays.map((day, dayIdx) => {
+              const dayKey = getBoliviaDateString(day);
+              const slotKey = `${dayKey}-${slotIdx}`;
+              const isDragOver = dragOverSlot === slotKey;
+              const dayEvents = eventsByDay.get(dayKey) ?? [];
+              const slotEvents = dayEvents.filter((apt) => {
+                const d = new Date(apt.fecha_hora);
+                const ah = getBoliviaHours(d);
+                const am = getBoliviaMinutes(d);
+                return ah === hour && (am >= 30 ? 1 : 0) === (minute >= 30 ? 1 : 0) && (minute === 0 ? am < 30 : am >= 30);
+              });
 
-                {/* Events */}
-                {slotEvents.map((apt) => {
-                  const pos = getEventPosition(apt.fecha_hora);
-                  const doctorName = apt.doctor?.usuario
-                    ? `${apt.doctor.usuario.nombre} ${apt.doctor.usuario.apellido}`
-                    : '';
-                  const specialty = apt.doctor?.especialidad?.nombre ?? '';
+              const dc = getBoliviaDateComponents(day);
+              const nc = getBoliviaDateComponents(now);
+              const isToday = dc.year === nc.year && dc.month === nc.month && dc.day === nc.day;
 
-                  return (
-                    <div
-                      key={apt.id_cita}
-                      className={`cal-event cal-event-${apt.estado} ${draggingId === apt.id_cita ? 'dragging' : ''}`}
-                      style={{ top: `${pos.top % SLOT_HEIGHT}px`, height: `${pos.height}px` }}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, apt.id_cita)}
-                      onDragEnd={handleDragEnd}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSelectEvent?.(apt);
-                      }}
-                    >
-                      <div className="cal-event-title">
-                        {apt.paciente?.usuario?.nombre} {apt.paciente?.usuario?.apellido}
+              return (
+                <div
+                  key={dayIdx}
+                  className={`cal-slot ${isDragOver ? 'drag-over' : ''} ${isToday ? 'cal-slot-today' : ''} ${minute === 30 ? 'cal-slot-half-hour' : ''}`}
+                  onDragOver={(e) => handleSlotDragOver(e, day, slotIdx)}
+                  onDrop={(e) => handleSlotDrop(e, day, slotIdx)}
+                  onDragLeave={handleSlotDragLeave}
+                  onClick={() => handleSlotClick(day, slotIdx)}
+                >
+                  {minute === 0 && <div className="cal-slot-half" />}
+
+                  {/* Events */}
+                  {slotEvents.map((apt) => {
+                    const pos = getEventPosition(apt.fecha_hora);
+                    const doctorName = apt.doctor?.usuario
+                      ? `${apt.doctor.usuario.nombre} ${apt.doctor.usuario.apellido}`
+                      : '';
+                    const specialty = apt.doctor?.especialidad?.nombre ?? '';
+
+                    return (
+                      <div
+                        key={apt.id_cita}
+                        className={`cal-event cal-event-${apt.estado} ${draggingId === apt.id_cita ? 'dragging' : ''}`}
+                        style={{ top: `${pos.top % SLOT_HEIGHT}px`, height: `${pos.height}px` }}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, apt.id_cita)}
+                        onDragEnd={handleDragEnd}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSelectEvent?.(apt);
+                        }}
+                      >
+                        <div className="cal-event-title">
+                          {apt.paciente?.usuario?.nombre} {apt.paciente?.usuario?.apellido}
+                        </div>
+                        <div className="cal-event-time">{formatTime(apt.fecha_hora)}</div>
+                        {specialty && <div className="cal-event-specialty">{doctorName} — {specialty}</div>}
                       </div>
-                      <div className="cal-event-time">{formatTime(apt.fecha_hora)}</div>
-                      {specialty && <div className="cal-event-specialty">{doctorName} — {specialty}</div>}
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })}
-        </div>
-      ))}
+                    );
+                  })}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })}
 
       {/* Current time indicator */}
       {showCurrentTime && currentTimePos !== null && (

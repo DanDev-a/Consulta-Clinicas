@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { PageHeader, Button, Spinner, Alert } from '../../../components/ui';
 import { RiAddLine, RiListCheck, RiCalendarEventLine } from 'react-icons/ri';
 import toast from 'react-hot-toast';
@@ -9,7 +9,7 @@ import AppointmentFilters from '../components/AppointmentFilters';
 import BookingWizard from '../components/BookingWizard';
 import { useAppointments } from '../hooks/useAppointments';
 import { toLocalISO, getBoliviaDateString, getBoliviaTimeString } from '../../../utils/date';
-import type { AppointmentStatus } from '../types/appointment';
+import type { Appointment, AppointmentStatus } from '../types/appointment';
 
 interface AppointmentPageProps {
   userRole: string | undefined;
@@ -21,10 +21,12 @@ export default function Appointment({ userRole, userId }: AppointmentPageProps) 
   const [showWizard, setShowWizard] = useState(false);
   const [initialDateTime, setInitialDateTime] = useState<string | undefined>();
   const [activeTab, setActiveTab] = useState<'list' | 'calendar'>(canViewCalendar(userRole) ? 'calendar' : 'list');
+  const [calendarAppointments, setCalendarAppointments] = useState<Appointment[]>([]);
+  const [calendarLoading, setCalendarLoading] = useState(false);
   const {
     loading, error, appointments, total, page, PAGE_SIZE,
     setPage, filters, setFilters,
-    fetchAppointments, createAppointment, updateAppointmentStatus, cancelAppointment, updateAppointmentTime,
+    fetchAppointments, fetchCalendarAppointments, createAppointment, updateAppointmentStatus, cancelAppointment, updateAppointmentTime,
     fetchDoctors, fetchAllPatients,
   } = useAppointments(userRole, userId);
 
@@ -34,10 +36,35 @@ export default function Appointment({ userRole, userId }: AppointmentPageProps) 
   const canCreate = isAdmin || isRecepcionista;
   const showCalendar = canViewCalendar(userRole);
 
+  const loadCalendarData = useCallback(async (fechaDesde: string, fechaHasta: string) => {
+    setCalendarLoading(true);
+    const data = await fetchCalendarAppointments(fechaDesde, fechaHasta);
+    setCalendarAppointments(data);
+    setCalendarLoading(false);
+  }, [fetchCalendarAppointments]);
+
+  useEffect(() => {
+    if (activeTab === 'calendar') {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, '0');
+      loadCalendarData(`${y}-${m}-01`, `${y}-${m}-31`);
+    }
+  }, [activeTab, loadCalendarData]);
+
   const handleStatusChange = async (id: number, status: AppointmentStatus) => {
     const ok = await updateAppointmentStatus(id, status);
-    if (ok) toast.success('Estado actualizado');
-    else toast.error('Error al actualizar');
+    if (ok) {
+      toast.success('Estado actualizado');
+      if (activeTab === 'calendar') {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        loadCalendarData(`${y}-${m}-01`, `${y}-${m}-31`);
+      }
+    } else {
+      toast.error('Error al actualizar');
+    }
   };
 
   const handleCancel = async (id: number) => {
@@ -61,10 +88,16 @@ export default function Appointment({ userRole, userId }: AppointmentPageProps) 
       const dateStr = newDate.toLocaleDateString('es-BO', { day: '2-digit', month: '2-digit' });
       const timeStr = newDate.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' });
       toast.success(`Cita reprogramada para ${dateStr} ${timeStr}`, { icon: '📅' });
+      if (activeTab === 'calendar') {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        loadCalendarData(`${y}-${m}-01`, `${y}-${m}-31`);
+      }
     } else {
       toast.error('Error al reprogramar la cita');
     }
-  }, [updateAppointmentTime]);
+  }, [updateAppointmentTime, activeTab, loadCalendarData]);
 
   const handleWizardBooked = () => {
     setShowWizard(false);
@@ -160,13 +193,15 @@ export default function Appointment({ userRole, userId }: AppointmentPageProps) 
       {/* Calendario custom */}
       {showCalendar && (
         <div style={{ display: activeTab === 'calendar' ? 'block' : 'none' }}>
+          {calendarLoading && <div className="flex justify-center py-4"><Spinner size="sm" /></div>}
           <AppointmentCalendar
-            appointments={appointments}
+            appointments={calendarAppointments}
             userRole={userRole}
             onSelectSlot={handleSlotClick}
             onDrop={handleDragDrop}
             onStatusChange={handleStatusChange}
             onCancel={handleCancel}
+            onRangeChange={loadCalendarData}
           />
         </div>
       )}

@@ -84,6 +84,11 @@
   outline-offset: -2px;
 }
 
+/* Half-hour slots — slightly dimmer background */
+.cal-slot-half-hour {
+  background-color: rgba(0, 0, 0, 0.015);
+}
+
 /* Half-hour lines */
 .cal-slot-half {
   position: absolute;

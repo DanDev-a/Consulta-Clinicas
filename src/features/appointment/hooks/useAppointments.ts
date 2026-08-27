@@ -5,6 +5,35 @@ import type { Appointment, AppointmentFormData, AppointmentFilter, AppointmentSt
 
 const PAGE_SIZE = 10;
 
+const SELECT_RELATIONS = '*, paciente:paciente(id_paciente, usuario:usuario(nombre, apellido)), doctor:doctor(id_doctor, usuario:usuario(nombre, apellido), especialidad:especialidad(nombre))';
+
+function mapRowToAppointment(c: Record<string, unknown>): Appointment {
+  const paciente = c.paciente as Record<string, unknown> | null;
+  const pacUsuario = paciente?.usuario as Record<string, string> | null;
+  const doctor = c.doctor as Record<string, unknown> | null;
+  const docUsuario = doctor?.usuario as Record<string, string> | null;
+  const especialidad = doctor?.especialidad as Record<string, string> | null;
+  return {
+    id_cita: c.id_cita as number,
+    id_paciente: c.id_paciente as string,
+    id_doctor: c.id_doctor as string,
+    id_expediente: c.id_expediente as number,
+    fecha_hora: c.fecha_hora as string,
+    motivo: c.motivo as string | null,
+    estado: c.estado as AppointmentStatus,
+    fecha_creacion: c.fecha_creacion as string,
+    paciente: paciente ? {
+      id_paciente: paciente.id_paciente as string,
+      usuario: pacUsuario ? { nombre: pacUsuario.nombre, apellido: pacUsuario.apellido } : null,
+    } : null,
+    doctor: doctor ? {
+      id_doctor: doctor.id_doctor as string,
+      usuario: docUsuario ? { nombre: docUsuario.nombre, apellido: docUsuario.apellido } : null,
+      especialidad: especialidad ? { nombre: especialidad.nombre } : null,
+    } : null,
+  };
+}
+
 export function useAppointments(userRole: string | undefined, userId: string | undefined) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -45,34 +74,7 @@ export function useAppointments(userRole: string | undefined, userId: string | u
 
       if (err) throw err;
 
-      setAppointments(
-        (data ?? []).map((c: Record<string, unknown>) => {
-          const paciente = c.paciente as Record<string, unknown> | null;
-          const pacUsuario = paciente?.usuario as Record<string, string> | null;
-          const doctor = c.doctor as Record<string, unknown> | null;
-          const docUsuario = doctor?.usuario as Record<string, string> | null;
-          const especialidad = doctor?.especialidad as Record<string, string> | null;
-          return {
-            id_cita: c.id_cita as number,
-            id_paciente: c.id_paciente as string,
-            id_doctor: c.id_doctor as string,
-            id_expediente: c.id_expediente as number,
-            fecha_hora: c.fecha_hora as string,
-            motivo: c.motivo as string | null,
-            estado: c.estado as AppointmentStatus,
-            fecha_creacion: c.fecha_creacion as string,
-            paciente: paciente ? {
-              id_paciente: paciente.id_paciente as string,
-              usuario: pacUsuario ? { nombre: pacUsuario.nombre, apellido: pacUsuario.apellido } : null,
-            } : null,
-            doctor: doctor ? {
-              id_doctor: doctor.id_doctor as string,
-              usuario: docUsuario ? { nombre: docUsuario.nombre, apellido: docUsuario.apellido } : null,
-              especialidad: especialidad ? { nombre: especialidad.nombre } : null,
-            } : null,
-          };
-        })
-      );
+      setAppointments((data ?? []).map(mapRowToAppointment));
       setTotal(count ?? 0);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cargar citas');
@@ -186,10 +188,30 @@ export function useAppointments(userRole: string | undefined, userId: string | u
     });
   };
 
+  const fetchCalendarAppointments = useCallback(async (fechaDesde: string, fechaHasta: string): Promise<Appointment[]> => {
+    try {
+      let query = supabase
+        .from('cita')
+        .select(SELECT_RELATIONS)
+        .gte('fecha_hora', fechaDesde)
+        .lte('fecha_hora', fechaHasta + 'T23:59:59')
+        .order('fecha_hora', { ascending: true });
+
+      if (userRole === 'DOCTOR') query = query.eq('id_doctor', userId);
+      else if (userRole === 'PACIENTE') query = query.eq('id_paciente', userId);
+
+      const { data, error: err } = await query;
+      if (err) throw err;
+      return (data ?? []).map(mapRowToAppointment);
+    } catch {
+      return [];
+    }
+  }, [userRole, userId]);
+
   return {
     loading, error, appointments, total, page, PAGE_SIZE,
     setPage, filters, setFilters,
-    fetchAppointments, createAppointment, updateAppointmentStatus, cancelAppointment, updateAppointmentTime,
+    fetchAppointments, fetchCalendarAppointments, createAppointment, updateAppointmentStatus, cancelAppointment, updateAppointmentTime,
     fetchDoctors, fetchAllPatients,
   };
 }

@@ -13,7 +13,9 @@ interface DayViewProps {
 const SLOT_HEIGHT = 48;
 const START_HOUR = 8;
 const END_HOUR = 20;
-const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
+const SLOTS_PER_HOUR = 2;
+const SLOT_MINUTES = 30;
+const TOTAL_SLOTS = (END_HOUR - START_HOUR) * SLOTS_PER_HOUR;
 
 function formatTime(iso: string): string {
   return formatTimeBolivia(iso);
@@ -21,14 +23,24 @@ function formatTime(iso: string): string {
 
 function getEventPosition(fechaHora: string): { top: number; height: number } {
   const d = new Date(fechaHora);
-  const hours = getBoliviaHours(d) + getBoliviaMinutes(d) / 60;
-  const top = (hours - START_HOUR) * SLOT_HEIGHT;
-  return { top: Math.max(0, top), height: 30 };
+  const hours = getBoliviaHours(d);
+  const minutes = getBoliviaMinutes(d);
+  const slotIndex = (hours - START_HOUR) * SLOTS_PER_HOUR + (minutes >= 30 ? 1 : 0);
+  const top = slotIndex * SLOT_HEIGHT;
+  return { top: Math.max(0, top), height: SLOT_HEIGHT - 4 };
+}
+
+function getSlotHour(slotIndex: number): number {
+  return START_HOUR + Math.floor(slotIndex / SLOTS_PER_HOUR);
+}
+
+function getSlotMinute(slotIndex: number): number {
+  return (slotIndex % SLOTS_PER_HOUR) * SLOT_MINUTES;
 }
 
 export default function DayView({ currentDate, appointments, onSelectEvent, onSelectSlot, onDrop }: DayViewProps) {
   const [now, setNow] = useState(new Date());
-  const [dragOverHour, setDragOverHour] = useState<number | null>(null);
+  const [dragOverSlot, setDragOverSlot] = useState<number | null>(null);
   const [draggingId, setDraggingId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -50,20 +62,23 @@ export default function DayView({ currentDate, appointments, onSelectEvent, onSe
   }, [appointments, currentDate]);
 
   const currentTimePos = useMemo(() => {
-    const h = getBoliviaHours(now) + getBoliviaMinutes(now) / 60;
-    if (h < START_HOUR || h > END_HOUR) return null;
-    return (h - START_HOUR) * SLOT_HEIGHT;
+    const hours = getBoliviaHours(now);
+    const minutes = getBoliviaMinutes(now);
+    if (hours < START_HOUR || hours >= END_HOUR) return null;
+    const slotIndex = (hours - START_HOUR) * SLOTS_PER_HOUR + (minutes >= 30 ? 1 : 0);
+    const partial = (minutes % 30) / 30;
+    return slotIndex * SLOT_HEIGHT + partial * SLOT_HEIGHT;
   }, [now]);
 
   const isToday = useMemo(() => {
     const curComp = getBoliviaDateComponents(currentDate);
-    const todayComp = getBoliviaDateComponents(new Date());
+    const todayComp = getBoliviaDateComponents(now);
     return (
       curComp.year === todayComp.year &&
       curComp.month === todayComp.month &&
       curComp.day === todayComp.day
     );
-  }, [currentDate]);
+  }, [currentDate, now]);
 
   const handleDragStart = useCallback((e: React.DragEvent, aptId: number) => {
     e.dataTransfer.setData('text/plain', String(aptId));
@@ -75,26 +90,32 @@ export default function DayView({ currentDate, appointments, onSelectEvent, onSe
   const handleDragEnd = useCallback((e: React.DragEvent) => {
     (e.target as HTMLElement).classList.remove('dragging');
     setDraggingId(null);
-    setDragOverHour(null);
+    setDragOverSlot(null);
   }, []);
 
-  const handleSlotDrop = useCallback((e: React.DragEvent, hour: number) => {
+  const handleSlotDrop = useCallback((e: React.DragEvent, slotIdx: number) => {
     e.preventDefault();
     e.stopPropagation();
-    setDragOverHour(null);
+    setDragOverSlot(null);
     const aptId = parseInt(e.dataTransfer.getData('text/plain'), 10);
     if (!aptId || !onDrop) return;
-    const newDate = new Date(currentDate);
-    newDate.setHours(hour, 0, 0, 0);
+    const hour = getSlotHour(slotIdx);
+    const minute = getSlotMinute(slotIdx);
+    const curComp = getBoliviaDateComponents(currentDate);
+    const newDate = new Date(curComp.year, curComp.month - 1, curComp.day, hour, minute, 0, 0);
     onDrop(aptId, newDate);
   }, [onDrop, currentDate]);
 
-  const handleSlotClick = useCallback((hour: number) => {
+  const handleSlotClick = useCallback((slotIdx: number) => {
     if (!onSelectSlot) return;
-    const d = new Date(currentDate);
-    d.setHours(hour, 0, 0, 0);
+    const hour = getSlotHour(slotIdx);
+    const minute = getSlotMinute(slotIdx);
+    const curComp = getBoliviaDateComponents(currentDate);
+    const d = new Date(curComp.year, curComp.month - 1, curComp.day, hour, minute, 0, 0);
     onSelectSlot(d);
   }, [onSelectSlot, currentDate]);
+
+  const curComp = getBoliviaDateComponents(currentDate);
 
   return (
     <div className="cal-time-grid cal-time-grid-day cal-scroll" style={{ maxHeight: '65vh', overflowY: 'auto' }}>
@@ -105,29 +126,38 @@ export default function DayView({ currentDate, appointments, onSelectEvent, onSe
           <div className="cal-day-header-name">
             {currentDate.toLocaleDateString('es-BO', { weekday: 'long' })}
           </div>
-          <div className="cal-day-header-number">{getBoliviaDateComponents(currentDate).day}</div>
+          <div className="cal-day-header-number">{curComp.day}</div>
         </div>
       </div>
 
       {/* Time grid */}
-      {HOURS.map((hour) => {
-        const hourEvents = dayAppointments.filter((apt) => getBoliviaHours(new Date(apt.fecha_hora)) === hour);
-        const isDragOver = dragOverHour === hour;
+      {Array.from({ length: TOTAL_SLOTS }, (_, slotIdx) => {
+        const hour = getSlotHour(slotIdx);
+        const minute = getSlotMinute(slotIdx);
+        const isHourStart = minute === 0;
+        const isDragOver = dragOverSlot === slotIdx;
+
+        const hourEvents = dayAppointments.filter((apt) => {
+          const d = new Date(apt.fecha_hora);
+          const ah = getBoliviaHours(d);
+          const am = getBoliviaMinutes(d);
+          return ah === hour && (minute === 0 ? am < 30 : am >= 30);
+        });
 
         return (
-          <div key={hour} className="col-span-full grid grid-cols-[56px_1fr]">
+          <div key={slotIdx} className="col-span-full grid grid-cols-[56px_1fr]">
             <div className="cal-time-label">
-              {String(hour).padStart(2, '0')}:00
+              {isHourStart ? `${String(hour).padStart(2, '0')}:00` : ''}
             </div>
 
             <div
-              className={`cal-slot ${isDragOver ? 'drag-over' : ''} ${isToday ? 'cal-slot-today' : ''}`}
-              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverHour(hour); }}
-              onDrop={(e) => handleSlotDrop(e, hour)}
-              onDragLeave={() => setDragOverHour(null)}
-              onClick={() => handleSlotClick(hour)}
+              className={`cal-slot ${isDragOver ? 'drag-over' : ''} ${isToday ? 'cal-slot-today' : ''} ${minute === 30 ? 'cal-slot-half-hour' : ''}`}
+              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setDragOverSlot(slotIdx); }}
+              onDrop={(e) => handleSlotDrop(e, slotIdx)}
+              onDragLeave={() => setDragOverSlot(null)}
+              onClick={() => handleSlotClick(slotIdx)}
             >
-              <div className="cal-slot-half" />
+              {minute === 0 && <div className="cal-slot-half" />}
 
               {hourEvents.map((apt) => {
                 const pos = getEventPosition(apt.fecha_hora);

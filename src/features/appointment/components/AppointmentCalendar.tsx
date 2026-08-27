@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import '../../../styles/calendar-custom.css';
 import CalendarToolbar, { type CalendarView } from './CalendarToolbar';
 import StatusLegend from './StatusLegend';
@@ -18,6 +18,41 @@ interface AppointmentCalendarProps {
   onDrop?: (appointmentId: number, newDate: Date) => void;
   onStatusChange?: (id: number, status: AppointmentStatus) => void;
   onCancel?: (id: number) => void;
+  onRangeChange?: (fechaDesde: string, fechaHasta: string) => void;
+}
+
+function getDateRange(date: Date, view: CalendarView): { desde: string; hasta: string } {
+  const comp = getBoliviaDateComponents(date);
+  const y = comp.year;
+  const m = String(comp.month).padStart(2, '0');
+
+  if (view === 'month') {
+    const firstDay = `${y}-${m}-01`;
+    const lastDay = new Date(y, comp.month, 0);
+    const lastComp = getBoliviaDateComponents(lastDay);
+    const ld = String(lastComp.day).padStart(2, '0');
+    return { desde: firstDay, hasta: `${y}-${m}-${ld}` };
+  }
+
+  if (view === 'day') {
+    const d = String(comp.day).padStart(2, '0');
+    return { desde: `${y}-${m}-${d}`, hasta: `${y}-${m}-${d}` };
+  }
+
+  // week or agenda
+  const dayOfWeek = comp.dayOfWeek;
+  const diff = dayOfWeek === 1 ? 0 : dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  const start = new Date(date);
+  start.setDate(date.getDate() + diff);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  const sc = getBoliviaDateComponents(start);
+  const ec = getBoliviaDateComponents(end);
+  const sm = String(sc.month).padStart(2, '0');
+  const sd = String(sc.day).padStart(2, '0');
+  const em = String(ec.month).padStart(2, '0');
+  const ed = String(ec.day).padStart(2, '0');
+  return { desde: `${sc.year}-${sm}-${sd}`, hasta: `${ec.year}-${em}-${ed}` };
 }
 
 export default function AppointmentCalendar({
@@ -28,11 +63,23 @@ export default function AppointmentCalendar({
   onDrop,
   onStatusChange,
   onCancel,
+  onRangeChange,
 }: AppointmentCalendarProps) {
   const [currentView, setCurrentView] = useState<CalendarView>('week');
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
+  const lastRangeRef = useRef<string>('');
+
+  useEffect(() => {
+    if (!onRangeChange) return;
+    const range = getDateRange(currentDate, currentView);
+    const key = `${range.desde}-${range.hasta}`;
+    if (key !== lastRangeRef.current) {
+      lastRangeRef.current = key;
+      onRangeChange(range.desde, range.hasta);
+    }
+  }, [currentDate, currentView, onRangeChange]);
 
   const handleNavigate = useCallback((direction: 'prev' | 'next') => {
     setCurrentDate((prev) => {
