@@ -52,7 +52,9 @@ export default function AiSystem({ userRole, userId }: AiSystemPageProps) {
         .abortSignal(controller.signal);
 
       if (error) {
-        console.error('Error loading patients:', error.message);
+        if (error.name !== 'AbortError') {
+          console.error('Error loading patients:', error.message);
+        }
         return;
       }
       const mapped = (data ?? []).map((p: Record<string, unknown>) => {
@@ -85,7 +87,9 @@ export default function AiSystem({ userRole, userId }: AiSystemPageProps) {
         .maybeSingle();
 
       if (error) {
-        setPatientError('Error al cargar expediente');
+        if (error.name !== 'AbortError') {
+          setPatientError('Error al cargar expediente');
+        }
         return;
       }
       if (!data) {
