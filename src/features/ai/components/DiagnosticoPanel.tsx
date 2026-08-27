@@ -8,13 +8,6 @@ interface DiagnosticoPanelProps {
   onAnalizar: (sintomas: string) => Promise<DiagnosticoResultado | null>;
 }
 
-const URGENCY_VARIANT: Record<string, 'danger' | 'warning' | 'info' | 'success'> = {
-  critica: 'danger',
-  alta: 'warning',
-  media: 'info',
-  baja: 'success',
-};
-
 export default function DiagnosticoPanel({ loading, onAnalizar }: DiagnosticoPanelProps) {
   const [sintomas, setSintomas] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
