@@ -1,4 +1,5 @@
 import { useMemo, useCallback } from 'react';
+import { getBoliviaDateComponents, formatTimeBolivia } from '../../../utils/date';
 import type { Appointment } from '../types/appointment';
 
 interface MonthViewProps {
@@ -28,7 +29,9 @@ function getMonthGrid(date: Date): Date[] {
 }
 
 function isSameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  const ca = getBoliviaDateComponents(a);
+  const cb = getBoliviaDateComponents(b);
+  return ca.year === cb.year && ca.month === cb.month && ca.day === cb.day;
 }
 
 function isToday(date: Date): boolean {
@@ -70,7 +73,7 @@ function getStatusTextColor(status: string): string {
 }
 
 function formatTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' });
+  return formatTimeBolivia(iso);
 }
 
 export default function MonthView({ currentDate, appointments, onSelectEvent, onSelectDay }: MonthViewProps) {
@@ -79,8 +82,8 @@ export default function MonthView({ currentDate, appointments, onSelectEvent, on
   const eventsByDate = useMemo(() => {
     const map = new Map<string, Appointment[]>();
     for (const apt of appointments) {
-      const d = new Date(apt.fecha_hora);
-      const key = `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+      const comp = getBoliviaDateComponents(new Date(apt.fecha_hora));
+      const key = `${comp.year}-${comp.month}-${comp.day}`;
       const existing = map.get(key) ?? [];
       existing.push(apt);
       map.set(key, existing);
@@ -104,7 +107,8 @@ export default function MonthView({ currentDate, appointments, onSelectEvent, on
       {/* Month grid */}
       <div className="cal-month-grid">
         {monthGrid.map((day, idx) => {
-          const key = `${day.getFullYear()}-${day.getMonth()}-${day.getDate()}`;
+          const comp = getBoliviaDateComponents(day);
+          const key = `${comp.year}-${comp.month}-${comp.day}`;
           const dayEvents = eventsByDate.get(key) ?? [];
           const visibleEvents = dayEvents.slice(0, MAX_CHIPS);
           const extraCount = dayEvents.length - MAX_CHIPS;
@@ -121,7 +125,7 @@ export default function MonthView({ currentDate, appointments, onSelectEvent, on
               ].join(' ')}
               onClick={() => handleDayClick(day)}
             >
-              <div className="cal-month-day-number">{day.getDate()}</div>
+              <div className="cal-month-day-number">{getBoliviaDateComponents(day).day}</div>
 
               {visibleEvents.map((apt) => (
                 <div

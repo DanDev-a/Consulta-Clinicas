@@ -50,17 +50,18 @@ export default function DayView({ currentDate, appointments, onSelectEvent, onSe
   }, [appointments, currentDate]);
 
   const currentTimePos = useMemo(() => {
-    const h = now.getHours() + now.getMinutes() / 60;
+    const h = getBoliviaHours(now) + getBoliviaMinutes(now) / 60;
     if (h < START_HOUR || h > END_HOUR) return null;
     return (h - START_HOUR) * SLOT_HEIGHT;
   }, [now]);
 
   const isToday = useMemo(() => {
-    const today = new Date();
+    const curComp = getBoliviaDateComponents(currentDate);
+    const todayComp = getBoliviaDateComponents(new Date());
     return (
-      currentDate.getFullYear() === today.getFullYear() &&
-      currentDate.getMonth() === today.getMonth() &&
-      currentDate.getDate() === today.getDate()
+      curComp.year === todayComp.year &&
+      curComp.month === todayComp.month &&
+      curComp.day === todayComp.day
     );
   }, [currentDate]);
 
@@ -104,7 +105,7 @@ export default function DayView({ currentDate, appointments, onSelectEvent, onSe
           <div className="cal-day-header-name">
             {currentDate.toLocaleDateString('es-BO', { weekday: 'long' })}
           </div>
-          <div className="cal-day-header-number">{currentDate.getDate()}</div>
+          <div className="cal-day-header-number">{getBoliviaDateComponents(currentDate).day}</div>
         </div>
       </div>
 

@@ -35,7 +35,9 @@ function getWeekDays(startOfWeek: Date): Date[] {
 }
 
 function isSameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+  const ca = getBoliviaDateComponents(a);
+  const cb = getBoliviaDateComponents(b);
+  return ca.year === cb.year && ca.month === cb.month && ca.day === cb.day;
 }
 
 function isToday(date: Date): boolean {
@@ -69,7 +71,7 @@ export default function WeekView({ currentDate, appointments, onSelectEvent, onS
   const eventsByDay = useMemo(() => {
     const map = new Map<number, Appointment[]>();
     for (const day of weekDays) {
-      map.set(day.getDate(), []);
+      map.set(getBoliviaDateComponents(day).day, []);
     }
     for (const apt of appointments) {
       const aptDate = new Date(apt.fecha_hora);
@@ -80,17 +82,17 @@ export default function WeekView({ currentDate, appointments, onSelectEvent, onS
       const startTime = startComp.year * 10000 + startComp.month * 100 + startComp.day;
       const endTime = endComp.year * 10000 + endComp.month * 100 + endComp.day;
       if (aptTime >= startTime && aptTime < endTime) {
-        const day = aptComp.day;
-        const existing = map.get(day) ?? [];
+        const dayKey = aptComp.day;
+        const existing = map.get(dayKey) ?? [];
         existing.push(apt);
-        map.set(day, existing);
+        map.set(dayKey, existing);
       }
     }
     return map;
   }, [appointments, weekDays, startOfWeek]);
 
   const currentTimePos = useMemo(() => {
-    const h = now.getHours() + now.getMinutes() / 60;
+    const h = getBoliviaHours(now) + getBoliviaMinutes(now) / 60;
     if (h < START_HOUR || h > END_HOUR) return null;
     return (h - START_HOUR) * SLOT_HEIGHT;
   }, [now]);
@@ -118,7 +120,7 @@ export default function WeekView({ currentDate, appointments, onSelectEvent, onS
   const handleSlotDragOver = useCallback((e: React.DragEvent, dayDate: Date, hour: number) => {
     e.preventDefault();
     e.stopPropagation();
-    const slotKey = `${dayDate.getDate()}-${hour}`;
+    const slotKey = `${getBoliviaDateComponents(dayDate).day}-${hour}`;
     setDragOverSlot(slotKey);
   }, []);
 
@@ -155,7 +157,7 @@ export default function WeekView({ currentDate, appointments, onSelectEvent, onS
             className={`cal-day-header ${isToday(day) ? 'cal-day-header-today' : ''} ${i >= 5 ? 'cal-day-header-weekend' : ''}`}
           >
             <div className="cal-day-header-name">{shortDays[i]}</div>
-            <div className="cal-day-header-number">{day.getDate()}</div>
+            <div className="cal-day-header-number">{getBoliviaDateComponents(day).day}</div>
           </div>
         ))}
       </div>
@@ -170,9 +172,9 @@ export default function WeekView({ currentDate, appointments, onSelectEvent, onS
 
           {/* Day cells */}
           {weekDays.map((day, dayIdx) => {
-            const slotKey = `${day.getDate()}-${hour}`;
+            const slotKey = `${getBoliviaDateComponents(day).day}-${hour}`;
             const isDragOver = dragOverSlot === slotKey;
-            const dayEvents = eventsByDay.get(day.getDate()) ?? [];
+            const dayEvents = eventsByDay.get(getBoliviaDateComponents(day).day) ?? [];
             const slotEvents = dayEvents.filter((apt) => {
               const d = new Date(apt.fecha_hora);
               return getBoliviaHours(d) === hour;

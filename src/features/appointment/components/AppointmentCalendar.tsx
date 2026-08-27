@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import '../../../styles/calendar-custom.css';
 import CalendarToolbar, { type CalendarView } from './CalendarToolbar';
 import StatusLegend from './StatusLegend';
@@ -8,6 +8,7 @@ import MonthView from './MonthView';
 import AgendaView from './AgendaView';
 import AppointmentDetailPanel from './AppointmentDetailPanel';
 import type { Appointment, AppointmentStatus } from '../types/appointment';
+import { getBoliviaDateComponents } from '../../../utils/date';
 
 interface AppointmentCalendarProps {
   appointments: Appointment[];
@@ -55,6 +56,32 @@ export default function AppointmentCalendar({
     setCurrentView(view);
   }, []);
 
+  const prevDisabled = useMemo(() => {
+    const now = new Date();
+    const nowComp = getBoliviaDateComponents(now);
+
+    if (currentView === 'day') {
+      const curComp = getBoliviaDateComponents(currentDate);
+      return curComp.year === nowComp.year && curComp.month === nowComp.month && curComp.day === nowComp.day;
+    }
+
+    if (currentView === 'week') {
+      const dayOfWeek = getBoliviaDateComponents(currentDate).dayOfWeek;
+      const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+      const startOfWeek = new Date(currentDate);
+      startOfWeek.setDate(currentDate.getDate() + diff);
+      const sowComp = getBoliviaDateComponents(startOfWeek);
+      return sowComp.year === nowComp.year && sowComp.month === nowComp.month && sowComp.day === nowComp.day;
+    }
+
+    if (currentView === 'month') {
+      const curComp = getBoliviaDateComponents(currentDate);
+      return curComp.year === nowComp.year && curComp.month === nowComp.month;
+    }
+
+    return false;
+  }, [currentDate, currentView]);
+
   const handleSelectEvent = useCallback((apt: Appointment) => {
     setSelectedAppointment(apt);
     setDetailOpen(true);
@@ -77,6 +104,7 @@ export default function AppointmentCalendar({
         onNavigate={handleNavigate}
         onToday={handleToday}
         onViewChange={handleViewChange}
+        prevDisabled={prevDisabled}
       />
 
       {currentView !== 'agenda' && <StatusLegend />}

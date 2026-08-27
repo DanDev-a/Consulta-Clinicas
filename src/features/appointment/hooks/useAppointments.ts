@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '../../../config/supabaseClient';
+import { toLocalISO, getBoliviaDateString, getBoliviaTimeString } from '../../../utils/date';
 import type { Appointment, AppointmentFormData, AppointmentFilter, AppointmentStatus } from '../types/appointment';
 
 const PAGE_SIZE = 10;
@@ -136,7 +137,7 @@ export function useAppointments(userRole: string | undefined, userId: string | u
     try {
       const { error } = await supabase
         .from('cita')
-        .update({ fecha_hora: newFechaHora.toISOString() })
+        .update({ fecha_hora: toLocalISO(getBoliviaDateString(newFechaHora), getBoliviaTimeString(newFechaHora)) })
         .eq('id_cita', id);
       if (error) throw error;
       await fetchAppointments();

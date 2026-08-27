@@ -16,6 +16,7 @@ interface CalendarToolbarProps {
   onNavigate: (direction: 'prev' | 'next') => void;
   onToday: () => void;
   onViewChange: (view: CalendarView) => void;
+  prevDisabled?: boolean;
 }
 
 const viewLabels: Record<CalendarView, { label: string; icon: React.ReactNode }> = {
@@ -65,13 +66,15 @@ export default function CalendarToolbar({
   onNavigate,
   onToday,
   onViewChange,
+  prevDisabled = false,
 }: CalendarToolbarProps) {
   return (
     <div className="flex items-center justify-between gap-4 px-4 py-3 border-b border-[var(--color-border-light)]">
       <div className="flex items-center gap-2">
         <button
           onClick={() => onNavigate('prev')}
-          className="p-1.5 rounded-lg hover:bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:text-[var(--color-text)] transition-colors cursor-pointer"
+          disabled={prevDisabled}
+          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${prevDisabled ? 'opacity-30 cursor-not-allowed' : 'hover:bg-[var(--color-surface-alt)] text-[var(--color-text-muted)] hover:text-[var(--color-text)]'}`}
           aria-label="Anterior"
         >
           <RiArrowLeftSLine size={20} />

@@ -1,22 +1,8 @@
 const BOLIVIA_TZ = 'America/La_Paz';
+const BOLIVIA_OFFSET = '-04:00';
 
 export function toLocalISO(dateStr: string, timeStr: string): string {
-  const [y, m, d] = dateStr.split('-').map(Number);
-  const [h, min] = timeStr.split(':').map(Number);
-  const dt = new Date(y, m - 1, d, h, min, 0, 0);
-  const offset = getOffset(dt);
-  return `${dateStr}T${timeStr}:00${offset}`;
-}
-
-function getOffset(dt: Date): string {
-  const utc = new Date(dt.toLocaleString('en-US', { timeZone: 'UTC' }));
-  const local = new Date(dt.toLocaleString('en-US', { timeZone: BOLIVIA_TZ }));
-  const diff = (local.getTime() - utc.getTime()) / 60000;
-  const sign = diff >= 0 ? '+' : '-';
-  const absDiff = Math.abs(diff);
-  const h = String(Math.floor(absDiff / 60)).padStart(2, '0');
-  const m = String(absDiff % 60).padStart(2, '0');
-  return `${sign}${h}:${m}`;
+  return `${dateStr}T${timeStr}:00${BOLIVIA_OFFSET}`;
 }
 
 export function getBoliviaDateComponents(date?: Date): { year: number; month: number; day: number; hours: number; minutes: number; dayOfWeek: number } {
