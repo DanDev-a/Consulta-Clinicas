@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../../config/supabaseClient';
 import { PageHeader, Tabs, Select, Alert, EmptyState, Badge, Card, Button, Modal } from '../../../components/ui';
 import { RiBrainLine, RiChat3Line, RiHistoryLine, RiShieldLine, RiQuestionLine } from 'react-icons/ri';
@@ -32,9 +32,10 @@ export default function AiSystem({ userRole, userId }: AiSystemPageProps) {
   const [patientError, setPatientError] = useState<string | null>(null);
   const [confirmModal, setConfirmModal] = useState<{ type: 'aceptar' | 'rechazar' } | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const patientsRef = useRef<PatientOption[]>([]);
 
   const { loading: aiLoading, error: aiError, resultado, historial, analizarSintomas, aceptarDiagnostico, rechazarDiagnostico, fetchHistorial } = useDiagnosticoIA(userId);
-  const { messages, loading: chatLoading, sendMessage, startChat, fetchChatHistory } = useChatMedico(userId);
+  const { messages, loading: chatLoading, error: chatError, sendMessage, startChat, fetchChatHistory } = useChatMedico(userId);
 
   const isAdmin = userRole === 'ADMIN';
   const isDoctor = userRole === 'DOCTOR';
@@ -54,10 +55,12 @@ export default function AiSystem({ userRole, userId }: AiSystemPageProps) {
         console.error('Error loading patients:', error.message);
         return;
       }
-      setPatients((data ?? []).map((p: Record<string, unknown>) => {
+      const mapped = (data ?? []).map((p: Record<string, unknown>) => {
         const u = p.usuario as Record<string, string> | null;
         return { value: p.id_paciente as string, label: `${u?.nombre ?? ''} ${u?.apellido ?? ''}` };
-      }));
+      });
+      setPatients(mapped);
+      patientsRef.current = mapped;
     };
     loadPatients();
     return () => controller.abort();
@@ -91,7 +94,7 @@ export default function AiSystem({ userRole, userId }: AiSystemPageProps) {
         return;
       }
 
-      const p = patients.find(pt => pt.value === selectedPatient);
+      const p = patientsRef.current.find(pt => pt.value === selectedPatient);
       setPatientInfo({
         id_paciente: selectedPatient,
         id_expediente: data.id_expediente,
@@ -103,7 +106,7 @@ export default function AiSystem({ userRole, userId }: AiSystemPageProps) {
     };
     loadExp();
     return () => controller.abort();
-  }, [selectedPatient, patients, startChat, fetchHistorial, fetchChatHistory]);
+  }, [selectedPatient, startChat, fetchHistorial, fetchChatHistory]);
 
   if (!canAccess) {
     return (
@@ -190,7 +193,7 @@ export default function AiSystem({ userRole, userId }: AiSystemPageProps) {
 
           <Tabs.Panel value="diagnostico">
             {aiError && <Alert variant="danger">{aiError}</Alert>}
-            <DiagnosticoPanel loading={aiLoading} resultado={resultado} onAnalizar={handleAnalizar} />
+            <DiagnosticoPanel loading={aiLoading} onAnalizar={handleAnalizar} />
             {resultado && (
               <div className="mt-4">
                 <ResultadoDiagnostico
@@ -204,7 +207,7 @@ export default function AiSystem({ userRole, userId }: AiSystemPageProps) {
           </Tabs.Panel>
 
           <Tabs.Panel value="chat">
-            <ChatMedico messages={messages} loading={chatLoading} onSend={handleSendChat} />
+            <ChatMedico messages={messages} loading={chatLoading} onSend={handleSendChat} error={chatError} />
           </Tabs.Panel>
 
           {isAdmin && (

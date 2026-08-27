@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { Textarea, Button, Card, Alert, Spinner } from '../../../components/ui';
+import { Textarea, Button, Card, Spinner } from '../../../components/ui';
 import { RiBrainLine } from 'react-icons/ri';
 import type { DiagnosticoResultado } from '../types/ai';
 
 interface DiagnosticoPanelProps {
   loading: boolean;
-  resultado: DiagnosticoResultado | null;
   onAnalizar: (sintomas: string) => Promise<DiagnosticoResultado | null>;
 }
 
@@ -16,7 +15,7 @@ const URGENCY_VARIANT: Record<string, 'danger' | 'warning' | 'info' | 'success'>
   baja: 'success',
 };
 
-export default function DiagnosticoPanel({ loading, resultado, onAnalizar }: DiagnosticoPanelProps) {
+export default function DiagnosticoPanel({ loading, onAnalizar }: DiagnosticoPanelProps) {
   const [sintomas, setSintomas] = useState('');
   const [analyzing, setAnalyzing] = useState(false);
 
@@ -50,39 +49,6 @@ export default function DiagnosticoPanel({ loading, resultado, onAnalizar }: Dia
           </Button>
         </div>
       </Card>
-
-      {resultado && (
-        <Card className="p-6 space-y-4">
-          <h4 className="font-semibold text-[var(--color-text)]">Diagnósticos Diferenciales</h4>
-          {resultado.diagnosticos.length > 0 ? (
-            resultado.diagnosticos.map((d, i) => (
-              <div key={i} className="p-4 bg-[var(--color-bg-secondary)] rounded-xl space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="font-medium">{d.nombre}</span>
-                  <span className="text-sm px-2 py-1 rounded-full bg-[var(--color-accent-soft)] text-[var(--color-accent)]">{d.probabilidad}%</span>
-                </div>
-                <div className="text-sm text-[var(--color-text-muted)]">CIE-10: {d.cie10}</div>
-                <div className="text-sm">{d.descripcion}</div>
-              </div>
-            ))
-          ) : (
-            <Alert variant="warning">No se detectaron diagnósticos diferenciales</Alert>
-          )}
-
-          {resultado.estudios_sugeridos.length > 0 && (
-            <div>
-              <h5 className="font-medium mt-4">Estudios Sugeridos</h5>
-              <ul className="list-disc list-inside text-sm text-[var(--color-text-muted)]">
-                {resultado.estudios_sugeridos.map((e, i) => <li key={i}>{e}</li>)}
-              </ul>
-            </div>
-          )}
-
-          <Alert variant={URGENCY_VARIANT[resultado.urgencia] ?? 'info'}>
-            Urgencia: <strong>{resultado.urgencia.toUpperCase()}</strong>
-          </Alert>
-        </Card>
-      )}
     </div>
   );
 }

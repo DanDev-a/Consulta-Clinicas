@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
+import { formatTimeBolivia, getBoliviaDateComponents, getBoliviaHours, getBoliviaMinutes } from '../../../utils/date';
 import type { Appointment } from '../types/appointment';
 
 interface DayViewProps {
@@ -15,13 +16,12 @@ const END_HOUR = 20;
 const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i);
 
 function formatTime(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' });
+  return formatTimeBolivia(iso);
 }
 
 function getEventPosition(fechaHora: string): { top: number; height: number } {
   const d = new Date(fechaHora);
-  const hours = d.getHours() + d.getMinutes() / 60;
+  const hours = getBoliviaHours(d) + getBoliviaMinutes(d) / 60;
   const top = (hours - START_HOUR) * SLOT_HEIGHT;
   return { top: Math.max(0, top), height: 30 };
 }
@@ -39,10 +39,12 @@ export default function DayView({ currentDate, appointments, onSelectEvent, onSe
   const dayAppointments = useMemo(() => {
     return appointments.filter((apt) => {
       const d = new Date(apt.fecha_hora);
+      const comp = getBoliviaDateComponents(d);
+      const curComp = getBoliviaDateComponents(currentDate);
       return (
-        d.getFullYear() === currentDate.getFullYear() &&
-        d.getMonth() === currentDate.getMonth() &&
-        d.getDate() === currentDate.getDate()
+        comp.year === curComp.year &&
+        comp.month === curComp.month &&
+        comp.day === curComp.day
       );
     }).sort((a, b) => new Date(a.fecha_hora).getTime() - new Date(b.fecha_hora).getTime());
   }, [appointments, currentDate]);
@@ -108,7 +110,7 @@ export default function DayView({ currentDate, appointments, onSelectEvent, onSe
 
       {/* Time grid */}
       {HOURS.map((hour) => {
-        const hourEvents = dayAppointments.filter((apt) => new Date(apt.fecha_hora).getHours() === hour);
+        const hourEvents = dayAppointments.filter((apt) => getBoliviaHours(new Date(apt.fecha_hora)) === hour);
         const isDragOver = dragOverHour === hour;
 
         return (

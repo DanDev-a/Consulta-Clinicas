@@ -1,4 +1,4 @@
-import { useAuth } from '../../auth/hooks/useAuth';
+import { useAuthContext } from '../../../contexts/AuthContext';
 
 interface UserRole {
   isAdmin: boolean;
@@ -8,19 +8,8 @@ interface UserRole {
 }
 
 export function useDashboardRole(): UserRole {
-  const { } = useAuth();
-  
-  const storedUser = localStorage.getItem('supabase.auth.token');
-  let role = '';
-  
-  if (storedUser) {
-    try {
-      const parsed = JSON.parse(storedUser);
-      role = parsed?.user?.user_metadata?.rol ?? parsed?.currentSession?.user?.user_metadata?.rol ?? '';
-    } catch {
-      role = '';
-    }
-  }
+  const { user } = useAuthContext();
+  const role = user?.rol ?? '';
 
   return {
     isAdmin: role === 'ADMIN',

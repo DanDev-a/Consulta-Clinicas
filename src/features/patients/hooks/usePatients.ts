@@ -83,6 +83,8 @@ export function usePatients(userRole: string | undefined, userId: string | undef
 
   const createPatient = async (data: PatientFormData): Promise<boolean> => {
     try {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+
       const { data: authData, error: authErr } = await supabase.auth.signUp({
         email: data.email,
         password: data.ci,
@@ -90,6 +92,10 @@ export function usePatients(userRole: string | undefined, userId: string | undef
       });
       if (authErr) throw authErr;
       if (!authData.user) throw new Error('No se pudo crear el usuario');
+
+      if (currentSession) {
+        await supabase.auth.setSession(currentSession);
+      }
 
       const { error: userErr } = await supabase
         .from('usuario')
@@ -158,8 +164,11 @@ export function usePatients(userRole: string | undefined, userId: string | undef
 
   const deletePatient = async (id: string): Promise<boolean> => {
     try {
-      const { error } = await supabase.from('paciente').delete().eq('id_paciente', id);
-      if (error) throw error;
+      const { error: pacErr } = await supabase.from('paciente').delete().eq('id_paciente', id);
+      if (pacErr) throw pacErr;
+
+      await supabase.from('usuario').delete().eq('id_usuario', id);
+
       await fetchPatients();
       return true;
     } catch (err) {

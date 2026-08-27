@@ -36,7 +36,7 @@ export default function PatientDetailPage({ userRole, userId }: PatientDetailPag
       setLoading(false);
     };
     load();
-  }, [id]);
+  }, [id, getPatientById]);
 
   const handleEdit = async (data: PatientFormData): Promise<boolean> => {
     if (!id) return false;

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Modal, Select, DatePicker, Textarea, Button } from '../../../components/ui';
 import TimeSlotPicker from './TimeSlotPicker';
+import { toLocalISO, getBoliviaDateString, getBoliviaTimeString } from '../../../utils/date';
 import type { AppointmentFormData } from '../types/appointment';
 
 const TIME_SLOTS = [
@@ -30,11 +31,11 @@ export default function AppointmentForm({ isOpen, onClose, onSubmit, fetchDoctor
     if (isOpen) {
       if (initialDateTime) {
         const dt = new Date(initialDateTime);
-        const dateStr = dt.toISOString().slice(0, 10);
-        const timeStr = dt.toTimeString().slice(0, 5);
+        const dateStr = getBoliviaDateString(dt);
+        const timeStr = getBoliviaTimeString(dt);
         setSelectedDate(dateStr);
         setSelectedTime(timeStr);
-        setForm(prev => ({ ...prev, fecha_hora: `${dateStr}T${timeStr}:00` }));
+        setForm(prev => ({ ...prev, fecha_hora: toLocalISO(dateStr, timeStr) }));
       } else {
         setSelectedDate('');
         setSelectedTime('');
@@ -43,21 +44,21 @@ export default function AppointmentForm({ isOpen, onClose, onSubmit, fetchDoctor
       Promise.all([fetchDoctors(), fetchPatients()]).then(([docs, pacs]) => {
         setDoctors(docs.map(d => ({ value: d.id_doctor, label: `${d.nombre} ${d.apellido} — ${d.especialidad}` })));
         setPatients(pacs.map(p => ({ value: p.id_paciente, label: `${p.nombre} ${p.apellido}` })));
-      });
+      }).catch(() => {});
     }
   }, [isOpen, initialDateTime]);
 
   const handleDateChange = (date: string) => {
     setSelectedDate(date);
     if (selectedTime) {
-      setForm(prev => ({ ...prev, fecha_hora: `${date}T${selectedTime}:00` }));
+      setForm(prev => ({ ...prev, fecha_hora: toLocalISO(date, selectedTime) }));
     }
   };
 
   const handleTimeSelect = (time: string) => {
     setSelectedTime(time);
     if (selectedDate) {
-      setForm(prev => ({ ...prev, fecha_hora: `${selectedDate}T${time}:00` }));
+      setForm(prev => ({ ...prev, fecha_hora: toLocalISO(selectedDate, time) }));
     }
   };
 

@@ -8,6 +8,7 @@ import AppointmentCalendar from '../components/AppointmentCalendar';
 import AppointmentFilters from '../components/AppointmentFilters';
 import BookingWizard from '../components/BookingWizard';
 import { useAppointments } from '../hooks/useAppointments';
+import { toLocalISO, getBoliviaDateString, getBoliviaTimeString } from '../../../utils/date';
 import type { AppointmentStatus } from '../types/appointment';
 
 interface AppointmentPageProps {
@@ -48,7 +49,9 @@ export default function Appointment({ userRole, userId }: AppointmentPageProps) 
 
   const handleSlotClick = useCallback((date: Date) => {
     if (!canCreate) return;
-    setInitialDateTime(date.toISOString().slice(0, 16));
+    const dateStr = getBoliviaDateString(date);
+    const timeStr = getBoliviaTimeString(date);
+    setInitialDateTime(toLocalISO(dateStr, timeStr));
     setShowForm(true);
   }, [canCreate]);
 

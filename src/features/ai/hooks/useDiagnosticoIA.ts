@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { supabase } from '../../../config/supabaseClient';
 import { groq, GROQ_MODEL } from '../config/groqClient';
 import type { DiagnosticoResultado, DiagnosticoIA } from '../types/ai';
@@ -235,7 +235,7 @@ export function useDiagnosticoIA(userId: string | undefined) {
     }
   };
 
-  const fetchHistorial = async (pacienteId?: string) => {
+  const fetchHistorial = useCallback(async (pacienteId?: string) => {
     try {
       if (!pacienteId) { setHistorial([]); return; }
 
@@ -244,7 +244,7 @@ export function useDiagnosticoIA(userId: string | undefined) {
         .select('id_expediente')
         .eq('id_paciente', pacienteId);
 
-      const expIds = (expedientes ?? []).map((e: any) => e.id_expediente);
+      const expIds = (expedientes ?? []).map((e: Record<string, unknown>) => e.id_expediente as number);
       if (expIds.length === 0) { setHistorial([]); return; }
 
       const { data } = await supabase
@@ -257,7 +257,7 @@ export function useDiagnosticoIA(userId: string | undefined) {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al cargar historial');
     }
-  };
+  }, []);
 
   return {
     loading, error, resultado, historial,

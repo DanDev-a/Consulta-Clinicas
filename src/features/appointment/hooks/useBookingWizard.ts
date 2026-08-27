@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '../../../config/supabaseClient';
+import { toLocalISO, getBoliviaDayOfWeek, getBoliviaDateComponents, getBoliviaDateString } from '../../../utils/date';
 import type { Especialidad, DoctorInfo, TimeSlot, BookingWizardState } from '../types/booking';
 import { TIME_SLOTS } from '../types/booking';
 
@@ -55,8 +56,9 @@ export function useBookingWizard(userId: string | undefined) {
   const fetchAvailableSlots = useCallback(async (doctorId: string, dateStr: string) => {
     setLoadingSlots(true);
     try {
-      const date = new Date(dateStr);
-      const dayOfWeek = date.getDay();
+      const [y, m, d] = dateStr.split('-').map(Number);
+      const dateObj = new Date(y, m - 1, d);
+      const dayOfWeek = getBoliviaDayOfWeek(dateObj);
 
       const { data: horarios } = await supabase
         .from('horario_doctor')
@@ -94,16 +96,17 @@ export function useBookingWizard(userId: string | undefined) {
       const occupiedTimes = new Set(
         (citas ?? []).map((c: { fecha_hora: string }) => {
           const d = new Date(c.fecha_hora);
-          return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+          const comp = getBoliviaDateComponents(d);
+          return `${String(comp.hours).padStart(2, '0')}:${String(comp.minutes).padStart(2, '0')}`;
         })
       );
 
-      const now = new Date();
-      const isToday = dateStr === now.toISOString().slice(0, 10);
+      const nowComp = getBoliviaDateComponents(new Date());
+      const isToday = dateStr === getBoliviaDateString(new Date());
 
       const result: TimeSlot[] = availableTimes.map(time => {
         const [h, m] = time.split(':').map(Number);
-        const isPast = isToday && (h < now.getHours() || (h === now.getHours() && m <= now.getMinutes()));
+        const isPast = isToday && (h < nowComp.hours || (h === nowComp.hours && m <= nowComp.minutes));
         return {
           time,
           label: time,
@@ -167,7 +170,7 @@ export function useBookingWizard(userId: string | undefined) {
         throw new Error('No se encontró tu expediente médico');
       }
 
-      const fecha_hora = `${state.date}T${state.time}:00`;
+      const fecha_hora = toLocalISO(state.date, state.time);
 
       const { error: insertError } = await supabase
         .from('cita')

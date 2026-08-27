@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect, useCallback } from 'react';
+import { formatTimeBolivia, getBoliviaDateComponents, getBoliviaHours, getBoliviaMinutes } from '../../../utils/date';
 import type { Appointment } from '../types/appointment';
 
 interface WeekViewProps {
@@ -43,14 +44,13 @@ function isToday(date: Date): boolean {
 
 function getEventPosition(fechaHora: string): { top: number; height: number } {
   const d = new Date(fechaHora);
-  const hours = d.getHours() + d.getMinutes() / 60;
+  const hours = getBoliviaHours(d) + getBoliviaMinutes(d) / 60;
   const top = (hours - START_HOUR) * SLOT_HEIGHT;
   return { top: Math.max(0, top), height: 30 };
 }
 
 function formatTime(iso: string): string {
-  const d = new Date(iso);
-  return d.toLocaleTimeString('es-BO', { hour: '2-digit', minute: '2-digit' });
+  return formatTimeBolivia(iso);
 }
 
 export default function WeekView({ currentDate, appointments, onSelectEvent, onSelectSlot, onDrop }: WeekViewProps) {
@@ -73,8 +73,14 @@ export default function WeekView({ currentDate, appointments, onSelectEvent, onS
     }
     for (const apt of appointments) {
       const aptDate = new Date(apt.fecha_hora);
-      if (aptDate >= startOfWeek && aptDate < new Date(startOfWeek.getTime() + 7 * 86400000)) {
-        const day = aptDate.getDate();
+      const aptComp = getBoliviaDateComponents(aptDate);
+      const startComp = getBoliviaDateComponents(startOfWeek);
+      const endComp = getBoliviaDateComponents(new Date(startOfWeek.getTime() + 7 * 86400000));
+      const aptTime = aptComp.year * 10000 + aptComp.month * 100 + aptComp.day;
+      const startTime = startComp.year * 10000 + startComp.month * 100 + startComp.day;
+      const endTime = endComp.year * 10000 + endComp.month * 100 + endComp.day;
+      if (aptTime >= startTime && aptTime < endTime) {
+        const day = aptComp.day;
         const existing = map.get(day) ?? [];
         existing.push(apt);
         map.set(day, existing);
@@ -169,7 +175,7 @@ export default function WeekView({ currentDate, appointments, onSelectEvent, onS
             const dayEvents = eventsByDay.get(day.getDate()) ?? [];
             const slotEvents = dayEvents.filter((apt) => {
               const d = new Date(apt.fecha_hora);
-              return d.getHours() === hour;
+              return getBoliviaHours(d) === hour;
             });
 
             return (

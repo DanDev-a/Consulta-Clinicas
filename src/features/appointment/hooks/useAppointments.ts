@@ -148,9 +148,13 @@ export function useAppointments(userRole: string | undefined, userId: string | u
   };
 
   const fetchDoctors = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('doctor')
       .select('id_doctor, usuario:usuario(nombre, apellido), especialidad:especialidad(nombre)');
+    if (error) {
+      console.error('Error fetching doctors:', error.message);
+      return [];
+    }
     return (data ?? []).map((d: Record<string, unknown>) => {
       const usuario = d.usuario as Record<string, string> | null;
       const esp = d.especialidad as Record<string, string> | null;
@@ -164,9 +168,13 @@ export function useAppointments(userRole: string | undefined, userId: string | u
   };
 
   const fetchAllPatients = async () => {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('paciente')
       .select('id_paciente, usuario:usuario(nombre, apellido)');
+    if (error) {
+      console.error('Error fetching patients:', error.message);
+      return [];
+    }
     return (data ?? []).map((p: Record<string, unknown>) => {
       const usuario = p.usuario as Record<string, string> | null;
       return {

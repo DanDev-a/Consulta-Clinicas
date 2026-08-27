@@ -3,6 +3,7 @@ import { Button, DatePicker, Textarea, Alert } from '../../../components/ui';
 import { RiArrowLeftLine, RiCheckLine } from 'react-icons/ri';
 import toast from 'react-hot-toast';
 import { useBookingWizard } from '../hooks/useBookingWizard';
+import { getBoliviaDateString } from '../../../utils/date';
 import TimeSlotPicker from './TimeSlotPicker';
 
 interface BookingWizardProps {
@@ -155,8 +156,8 @@ export default function BookingWizard({ userId, onClose, onBooked }: BookingWiza
               type="date"
               value={selectedDate}
               onChange={e => handleDateChange(e.target.value)}
-              min={new Date().toISOString().slice(0, 10)}
-              max={new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)}
+              min={getBoliviaDateString(new Date())}
+              max={getBoliviaDateString(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000))}
             />
             {selectedDate && (
               <TimeSlotPicker
