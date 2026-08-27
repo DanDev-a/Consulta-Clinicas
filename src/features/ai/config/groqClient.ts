@@ -10,4 +10,4 @@ export const groq = new Groq({
   dangerouslyAllowBrowser: true,
 });
 
-export const GROQ_MODEL = 'llama-3.3-70b-versatile';
+export const GROQ_MODEL = 'qwen/qwen3.6-27b';
