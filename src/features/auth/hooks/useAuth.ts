@@ -24,14 +24,23 @@ export function useAuth() {
   ) => {
     setLoading(true);
     setError(null);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: metadata ? { data: metadata } : undefined,
     });
-    if (error) setError(error.message);
+    let ok = false;
+    if (error) {
+      setError(error.message);
+    } else if (!data.user) {
+      setError('No se pudo crear la cuenta');
+    } else if ((data.user.identities?.length ?? 0) === 0) {
+      setError('Ese email ya está registrado');
+    } else {
+      ok = true;
+    }
     setLoading(false);
-    return !error;
+    return ok;
   };
 
   const signInWithGoogle = async () => {

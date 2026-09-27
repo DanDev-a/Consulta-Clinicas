@@ -38,7 +38,11 @@ interface Especialidad {
 export default function Register() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
-  const rol = (searchParams.get('rol') || 'PACIENTE').toUpperCase();
+  const requestedRol = (searchParams.get('rol') || 'PACIENTE').toUpperCase();
+  const rol =
+    (requestedRol === 'DOCTOR' || requestedRol === 'RECEPCIONISTA') && token
+      ? requestedRol
+      : 'PACIENTE';
 
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState('');

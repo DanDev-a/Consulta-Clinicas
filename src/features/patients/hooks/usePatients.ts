@@ -3,6 +3,7 @@ import { supabase } from '../../../config/supabaseClient';
 import type { Patient, PatientFormData, PatientFilter, PatientAlergia, PatientMedicamento, Expediente } from '../types/patient';
 
 const PAGE_SIZE = 10;
+const NIL_UUID = '00000000-0000-0000-0000-000000000000';
 
 export function usePatients(userRole: string | undefined, userId: string | undefined) {
   const [loading, setLoading] = useState(true);
@@ -38,7 +39,16 @@ export function usePatients(userRole: string | undefined, userId: string | undef
       }
 
       if (filters.search) {
-        query = query.or(`ci.ilike.%${filters.search}%,usuario(nombre).ilike.%${filters.search}%,usuario(apellido).ilike.%${filters.search}%,usuario(email).ilike.%${filters.search}%`);
+        const term = filters.search.replace(/[%_,()\\]/g, '').trim();
+        if (term) {
+          const { data: matchIds } = await supabase
+            .from('usuario')
+            .select('id_usuario')
+            .or(`nombre.ilike.%${term}%,apellido.ilike.%${term}%,email.ilike.%${term}%`)
+            .limit(200);
+          const ids = (matchIds ?? []).map((m: { id_usuario: string }) => m.id_usuario);
+          query = query.or(`ci.ilike.%${term}%,id_paciente.in.(${ids.length > 0 ? ids.join(',') : NIL_UUID})`);
+        }
       }
       if (filters.sexo) query = query.eq('sexo', filters.sexo);
       if (filters.ciudad) query = query.ilike('ciudad', `%${filters.ciudad}%`);
@@ -88,39 +98,32 @@ export function usePatients(userRole: string | undefined, userId: string | undef
       const { data: authData, error: authErr } = await supabase.auth.signUp({
         email: data.email,
         password: data.ci,
-        options: { data: { rol: 'PACIENTE', nombre: data.nombre, apellido: data.apellido } },
+        options: {
+          data: {
+            rol: 'PACIENTE',
+            nombre: data.nombre,
+            apellido: data.apellido,
+            ci: data.ci,
+            fecha_nacimiento: data.fecha_nacimiento,
+            sexo: data.sexo,
+            telefono: data.telefono || '',
+            direccion: data.direccion || '',
+            ciudad: data.ciudad || '',
+            grupo_sanguineo: data.grupo_sanguineo || '',
+          },
+        },
       });
       if (authErr) throw authErr;
       if (!authData.user) throw new Error('No se pudo crear el usuario');
-
-      if (currentSession) {
-        await supabase.auth.setSession(currentSession);
+      if ((authData.user.identities?.length ?? 0) === 0) {
+        throw new Error('Ese email ya está registrado');
       }
 
-      const { error: userErr } = await supabase
-        .from('usuario')
-        .upsert({
-          id_usuario: authData.user.id,
-          nombre: data.nombre,
-          apellido: data.apellido,
-          email: data.email,
-          rol: 'PACIENTE',
-        });
-      if (userErr) throw userErr;
-
-      const { error: pacErr } = await supabase
-        .from('paciente')
-        .upsert({
-          id_paciente: authData.user.id,
-          ci: data.ci,
-          fecha_nacimiento: data.fecha_nacimiento,
-          sexo: data.sexo,
-          telefono: data.telefono || null,
-          direccion: data.direccion || null,
-          ciudad: data.ciudad || null,
-          grupo_sanguineo: data.grupo_sanguineo || null,
-        });
-      if (pacErr) throw pacErr;
+      const { data: { session: afterSession } } = await supabase.auth.getSession();
+      if (currentSession && afterSession?.user.id !== currentSession.user.id) {
+        const { error: restoreErr } = await supabase.auth.setSession(currentSession);
+        if (restoreErr) console.error('No se pudo restaurar la sesión:', restoreErr);
+      }
 
       await fetchPatients();
       return true;
@@ -132,11 +135,10 @@ export function usePatients(userRole: string | undefined, userId: string | undef
 
   const updatePatient = async (id: string, data: Partial<PatientFormData>): Promise<boolean> => {
     try {
-      if (data.nombre || data.apellido || data.email) {
+      if (data.nombre || data.apellido) {
         const updates: Record<string, unknown> = {};
         if (data.nombre) updates.nombre = data.nombre;
         if (data.apellido) updates.apellido = data.apellido;
-        if (data.email) updates.email = data.email;
         const { error } = await supabase.from('usuario').update(updates).eq('id_usuario', id);
         if (error) throw error;
       }

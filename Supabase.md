@@ -108,67 +108,159 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 -- Funcion: auto-crear usuario al registrarse
 -- Se ejecuta cuando auth.users recibe un INSERT.
 -- Crea la fila en usuario + la sub-fila segun el rol.
+-- Migracion aplicada: migrations/fix_signup_trigger.sql
+--
+-- Reglas:
+--   1. INSERT INTO expediente (id_paciente): id_expediente es
+--      SERIAL (INT), nunca recibe un UUID.
+--   2. El rol NO se toma del cliente. Solo un invite sin usar,
+--      con token valido y email coincidente, puede otorgar
+--      DOCTOR/RECEPCIONISTA. Cualquier otro caso queda PACIENTE.
+--   3. Datos faltantes (CI, fecha_nacimiento, sexo) usan valores
+--      provisionales (PEND-<uuid>, 1900-01-01, O) y dejan un
+--      NOTICE en el log en vez de abortar el signup con un 500.
+--   4. Todo error inesperado se relanza como
+--      "handle_new_user fallo para <email>: ..." para que sea
+--      visible en Supabase > Logs > Postgres.
 
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
 DECLARE
-    user_rol      TEXT;
-    user_nombre   TEXT;
-    user_apellido TEXT;
+    meta         JSONB := COALESCE(NEW.raw_user_meta_data, '{}'::jsonb);
+    v_email      TEXT;
+    v_full       TEXT;
+    v_first      TEXT;
+    v_rest       TEXT;
+    v_rol        TEXT  := 'PACIENTE';
+    v_token      TEXT;
+    v_invite_rol TEXT;
+    v_nombre     TEXT;
+    v_apellido   TEXT;
+    v_ci         TEXT;
+    v_fecha_nac  DATE;
+    v_sexo       CHAR(1);
+    v_grupo      TEXT;
 BEGIN
-    user_rol      := COALESCE(NEW.raw_user_meta_data ->> 'rol', 'PACIENTE');
-    user_nombre   := COALESCE(NEW.raw_user_meta_data ->> 'nombre', '');
-    user_apellido := COALESCE(NEW.raw_user_meta_data ->> 'apellido', '');
+    -- 1. Email (algunos proveedores OAuth no traen email)
+    v_email := COALESCE(NEW.email,
+                        NULLIF(meta ->> 'email', ''),
+                        NEW.id::text || '@sin-email.local');
 
-    IF user_nombre = '' THEN
-        user_nombre := SPLIT_PART(NEW.email, '@', 1);
+    -- 2. Nombre y apellido: formulario de registro o datos del proveedor
+    v_full  := NULLIF(COALESCE(meta ->> 'full_name', meta ->> 'name'), '');
+    v_first := NULLIF(split_part(COALESCE(v_full, ''), ' ', 1), '');
+    v_rest  := NULLIF(btrim(substr(COALESCE(v_full, ''), length(v_first) + 1)), '');
+
+    v_nombre   := COALESCE(NULLIF(meta ->> 'nombre', ''),
+                           v_first,
+                           split_part(v_email, '@', 1),
+                           'usuario');
+    v_apellido := COALESCE(NULLIF(meta ->> 'apellido', ''), v_rest, '');
+
+    -- 3. ROL: no se confia en el metadata del cliente
+    v_token := NULLIF(btrim(meta ->> 'invite_token'), '');
+
+    IF v_token IS NOT NULL
+       AND v_token ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+       AND to_regclass('public.pending_invite') IS NOT NULL
+    THEN
+        SELECT pi.rol INTO v_invite_rol
+        FROM pending_invite pi
+        WHERE pi.token = v_token::uuid
+          AND pi.used IS NOT TRUE
+          AND lower(pi.email) = lower(v_email)
+        FOR UPDATE;
+
+        IF v_invite_rol IS NOT NULL THEN
+            v_rol := v_invite_rol;
+            UPDATE pending_invite SET used = TRUE WHERE token = v_token::uuid;
+        ELSE
+            RAISE NOTICE 'handle_new_user: invite_token invalido, usado o con otro email para %; se da de alta como PACIENTE', v_email;
+        END IF;
     END IF;
 
     INSERT INTO usuario (id_usuario, nombre, apellido, email, rol)
-    VALUES (NEW.id, user_nombre, user_apellido, NEW.email, user_rol);
+    VALUES (NEW.id, v_nombre, v_apellido, v_email, v_rol);
 
-    IF user_rol = 'PACIENTE' THEN
+    -- 4. PACIENTE + EXPEDIENTE
+    IF v_rol = 'PACIENTE' THEN
+        v_ci := left(NULLIF(btrim(meta ->> 'ci'), ''), 20);
+
+        IF v_ci IS NOT NULL AND EXISTS (SELECT 1 FROM paciente WHERE ci = v_ci) THEN
+            RAISE NOTICE 'handle_new_user: la CI % ya existe; se usa CI provisional para %', v_ci, v_email;
+            v_ci := NULL;
+        END IF;
+
+        IF v_ci IS NULL THEN
+            v_ci := 'PEND-' || substr(replace(NEW.id::text, '-', ''), 1, 15);
+            RAISE NOTICE 'handle_new_user: sin CI para %; se usa CI provisional %', v_email, v_ci;
+        END IF;
+
+        BEGIN
+            v_fecha_nac := NULLIF(meta ->> 'fecha_nacimiento', '')::date;
+        EXCEPTION WHEN invalid_datetime_format THEN
+            RAISE NOTICE 'handle_new_user: fecha_nacimiento invalida (%) para %; se usa 1900-01-01',
+                         meta ->> 'fecha_nacimiento', v_email;
+            v_fecha_nac := NULL;
+        END;
+        v_fecha_nac := COALESCE(v_fecha_nac, DATE '1900-01-01');
+
+        v_sexo := substr(upper(COALESCE(NULLIF(meta ->> 'sexo', ''), 'O')), 1, 1);
+        IF v_sexo IS NULL OR btrim(v_sexo) = '' OR v_sexo NOT IN ('M', 'F', 'O') THEN
+            v_sexo := 'O';
+        END IF;
+
+        v_grupo := NULLIF(upper(btrim(meta ->> 'grupo_sanguineo')), '');
+        IF v_grupo IS NOT NULL
+           AND v_grupo NOT IN ('A+','A-','B+','B-','AB+','AB-','O+','O-') THEN
+            v_grupo := NULL;
+        END IF;
+
         INSERT INTO paciente (id_paciente, ci, fecha_nacimiento, sexo,
                               telefono, direccion, ciudad, grupo_sanguineo)
         VALUES (
             NEW.id,
-            NEW.raw_user_meta_data ->> 'ci',
-            (NEW.raw_user_meta_data ->> 'fecha_nacimiento')::DATE,
-            (NEW.raw_user_meta_data ->> 'sexo')::CHAR,
-            NULLIF(NEW.raw_user_meta_data ->> 'telefono', ''),
-            NULLIF(NEW.raw_user_meta_data ->> 'direccion', ''),
-            NULLIF(NEW.raw_user_meta_data ->> 'ciudad', ''),
-            NULLIF(NEW.raw_user_meta_data ->> 'grupo_sanguineo', '')
+            v_ci,
+            v_fecha_nac,
+            v_sexo,
+            left(NULLIF(meta ->> 'telefono', ''), 20),
+            left(NULLIF(meta ->> 'direccion', ''), 255),
+            left(NULLIF(meta ->> 'ciudad', ''), 100),
+            v_grupo
         );
 
         INSERT INTO expediente (id_paciente)
         VALUES (NEW.id);
     END IF;
 
-    IF user_rol = 'DOCTOR' THEN
+    -- 5. DOCTOR (solo via invite del admin)
+    IF v_rol = 'DOCTOR' THEN
+        IF NULLIF(meta ->> 'numero_licencia', '') IS NULL
+           OR NULLIF(meta ->> 'id_especialidad', '') IS NULL
+           OR NOT (meta ->> 'id_especialidad') ~ '^[0-9]+$'
+        THEN
+            RAISE EXCEPTION 'handle_new_user: registro DOCTOR incompleto para % (id_especialidad=%, numero_licencia=%)',
+                            v_email, meta ->> 'id_especialidad', meta ->> 'numero_licencia';
+        END IF;
+
         INSERT INTO doctor (id_doctor, id_especialidad, numero_licencia, telefono)
-        VALUES (
-            NEW.id,
-            (NEW.raw_user_meta_data ->> 'id_especialidad')::INTEGER,
-            NEW.raw_user_meta_data ->> 'numero_licencia',
-            NULLIF(NEW.raw_user_meta_data ->> 'telefono', '')
-        );
+        VALUES (NEW.id,
+                (meta ->> 'id_especialidad')::integer,
+                left(meta ->> 'numero_licencia', 50),
+                left(NULLIF(meta ->> 'telefono', ''), 20));
     END IF;
 
-    IF user_rol = 'RECEPCIONISTA' THEN
+    -- 6. RECEPCIONISTA (solo via invite del admin)
+    IF v_rol = 'RECEPCIONISTA' THEN
         INSERT INTO recepcionista (id_recepcionista)
         VALUES (NEW.id);
     END IF;
 
-    -- Marcar invite como usado si vino con token
-    IF NEW.raw_user_meta_data ? 'invite_token' THEN
-        UPDATE pending_invite
-        SET used = TRUE
-        WHERE token = (NEW.raw_user_meta_data ->> 'invite_token')::UUID
-          AND used = FALSE;
-    END IF;
-
     RETURN NEW;
+
+EXCEPTION WHEN OTHERS THEN
+    RAISE EXCEPTION 'handle_new_user fallo para %: % (SQLSTATE %)',
+                    COALESCE(NEW.email, NEW.id::text), SQLERRM, SQLSTATE;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
@@ -655,6 +747,24 @@ CREATE POLICY "admin_insert_usuario" ON usuario FOR INSERT WITH CHECK (is_admin(
 CREATE POLICY "admin_update_usuario" ON usuario FOR UPDATE USING (is_admin());
 CREATE POLICY "admin_delete_usuario" ON usuario FOR DELETE USING (is_admin());
 
+-- Editar el propio perfil (Profile.tsx actualiza nombre/apellido)
+CREATE POLICY "own_update_usuario" ON usuario FOR UPDATE USING (id_usuario = auth.uid());
+
+-- El doctor edita pacientes (PatientDetailPage: canEdit = admin || doctor)
+CREATE POLICY "doctor_update_usuario" ON usuario FOR UPDATE USING (
+    is_doctor()
+    AND id_usuario IN (SELECT id_paciente FROM paciente)
+);
+
+-- Columnas de usuario editables via PostgREST.
+-- Las policies controlan FILAS; los grants controlan COLUMNAS.
+-- Sin esto, cualquier usuario autenticado podia hacer:
+--     update usuario set rol = 'ADMIN' where id_usuario = auth.uid()
+-- Migracion aplicada: migrations/fix_rls_security.sql
+REVOKE UPDATE ON public.usuario FROM authenticated;
+GRANT UPDATE (nombre, apellido) ON public.usuario TO authenticated;
+-- + GRANT UPDATE (preferencias) ... si existe la columna (parte 10)
+
 
 -- =====================================================
 -- POLICIES: PACIENTE
@@ -1102,12 +1212,16 @@ CREATE INDEX idx_ai_session_paciente    ON ai_session(id_paciente);
 ALTER TABLE usuario
   ADD COLUMN preferencias JSONB DEFAULT '{}'::jsonb;
 
--- 10.2 RLS: cada usuario solo lee/escribe sus propias preferencias
-CREATE POLICY "own_select_preferencias" ON usuario
-  FOR SELECT USING (id_usuario = auth.uid());
-
-CREATE POLICY "own_update_preferencias" ON usuario
-  FOR UPDATE USING (id_usuario = auth.uid());
+-- 10.2 RLS de preferencias: ELIMINADAS (migracion fix_rls_security.sql)
+-- Antes existian "own_select_preferencias" y
+-- "own_update_preferencias" sobre usuario. La segunda permitia
+-- escalada de privilegios (update usuario set rol='ADMIN' sobre la
+-- propia fila), porque RLS restringe filas y no columnas.
+-- Ademas eran redundantes:
+--   SELECT -> own_select_usuario (parte 8.1)
+--   UPDATE -> grant de columna sobre preferencias (parte 8.1)
+--   Lectura/escritura de settings -> RPC get_user_preferencias /
+--   update_user_preferencias (SECURITY DEFINER, partes 10.3 y 10.4)
 
 -- 10.3 Funcion para obtener preferencias del usuario actual
 CREATE OR REPLACE FUNCTION get_user_preferencias()
@@ -1268,3 +1382,29 @@ ALTER TABLE cita ADD COLUMN IF NOT EXISTS fecha_atencion TIMESTAMPTZ;
 
 
 
+
+-- =====================================================
+-- MIGRACIÓN: 2026-09-27 (archivos en migrations/)
+-- Orden de ejecución en el SQL Editor de Supabase:
+--
+--   1. migrations/fix_signup_trigger.sql
+--      Diagnóstico + handle_new_user() correcta.
+--      Arregla el 500 "Database error saving new user"
+--      (column id_expediente is of type integer but
+--      expression is of type uuid).
+--
+--   2. migrations/test_signup_trigger.sql
+--      Prueba con BEGIN/ROLLBACK: 4 registros de prueba
+--      (completo, sin metadata, rol=ADMIN, invite inválido)
+--      y verificación de usuarios/pacientes/expedientes.
+--      No deja datos.
+--
+--   3. migrations/fix_rls_security.sql
+--      Elimina own_*_preferencias (escalada a ADMIN),
+--      agrega own_update_usuario y doctor_update_usuario,
+--      limita las columnas de usuario editables via API.
+--
+-- Dónde mirar los errores de signup:
+--   Supabase > Logs > Postgres  (el detalle SQL real)
+--   Authentication > Logs solo muestra el 500 de GoTrue.
+-- =====================================================
